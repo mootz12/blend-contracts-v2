@@ -2,7 +2,7 @@
 
 use crate::{
     backstop::Q4W,
-    dependencies::{CometClient, COMET_WASM},
+    dependencies::{CometClient, COMET_WASM, EmitterClient, EMITTER_WASM},
     storage::{self},
     BackstopContract,
 };
@@ -16,7 +16,6 @@ use soroban_sdk::{
 
 use sep_41_token::testutils::{MockTokenClient, MockTokenWASM};
 
-use blend_contract_sdk::emitter::{Client as EmitterClient, WASM as EmitterWASM};
 use mock_pool_factory::{MockPoolFactory, MockPoolFactoryClient, PoolInitMeta};
 
 /// Create a backstop contract.
@@ -111,12 +110,12 @@ pub(crate) fn create_emitter<'a>(
     blnd_token: &Address,
     emitter_last_distro: u64,
 ) -> (Address, EmitterClient<'a>) {
-    let contract_address = e.register(EmitterWASM, ());
+    let contract_address = e.register(EMITTER_WASM, ());
 
     let prev_timestamp = e.ledger().timestamp();
     e.ledger().set(LedgerInfo {
         timestamp: emitter_last_distro,
-        protocol_version: 22,
+        protocol_version: 23,
         sequence_number: 0,
         network_id: Default::default(),
         base_reserve: 10,
@@ -131,7 +130,7 @@ pub(crate) fn create_emitter<'a>(
     client.initialize(&blnd_token, &backstop, &backstop_token);
     e.ledger().set(LedgerInfo {
         timestamp: prev_timestamp,
-        protocol_version: 22,
+        protocol_version: 23,
         sequence_number: 0,
         network_id: Default::default(),
         base_reserve: 10,

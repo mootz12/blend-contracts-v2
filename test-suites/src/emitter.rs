@@ -1,8 +1,12 @@
 use soroban_sdk::{Address, Env};
 
-use blend_contract_sdk::emitter::{Client as EmitterClient, WASM as EmitterWASM};
-
-pub fn create_emitter<'a>(e: &Env) -> (Address, EmitterClient<'a>) {
-    let contract_id = e.register(EmitterWASM, ());
-    (contract_id.clone(), EmitterClient::new(e, &contract_id))
+mod emitter {
+    soroban_sdk::contractimport!(file = "../emitter/emitter_v1.0.0.wasm");
 }
+
+pub fn create_emitter<'a>(e: &Env) -> (Address, emitter::Client<'a>) {
+    let contract_id = e.register(emitter::WASM, ());
+    (contract_id.clone(), emitter::Client::new(e, &contract_id))
+}
+
+pub use emitter::Client as EmitterClient;
