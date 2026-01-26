@@ -1,32 +1,300 @@
-use soroban_sdk::{Address, Env, Symbol, Vec};
+use soroban_sdk::{contractevent, Address, Env, Vec};
 
 use crate::{AuctionData, ReserveConfig};
+
+/// Emitted when a new admin is set for a pool
+///
+/// - topics - `["set_admin", admin: Address]`
+/// - data - `new_admin: Address`
+#[contractevent(data_format = "single-value")]
+pub struct SetAdmin {
+    #[topic]
+    pub admin: Address,
+    pub new_admin: Address,
+}
+
+/// Emitted when pool parameters are updated
+///
+/// - topics - `["update_pool", admin: Address]`
+/// - data - `[backstop_take_rate: u32, max_positions: u32, min_collateral: i128]`
+#[contractevent(data_format = "vec")]
+pub struct UpdatePool {
+    #[topic]
+    pub admin: Address,
+    pub backstop_take_rate: u32,
+    pub max_positions: u32,
+    pub min_collateral: i128,
+}
+
+/// Emitted when a new reserve configuration change is queued
+///
+/// - topics - `["queue_set_reserve", admin: Address]`
+/// - data - `[asset: Address, metadata: ReserveConfig]`
+#[contractevent(data_format = "vec")]
+pub struct QueueSetReserve {
+    #[topic]
+    pub admin: Address,
+    pub asset: Address,
+    pub metadata: ReserveConfig,
+}
+
+/// Emitted when a queued reserve configuration change is cancelled
+///
+/// - topics - `["cancel_set_reserve", admin: Address]`
+/// - data - `asset: Address`
+#[contractevent(data_format = "single-value")]
+pub struct CancelSetReserve {
+    #[topic]
+    pub admin: Address,
+    pub asset: Address,
+}
+
+/// Emitted when a reserve configuration change is set
+///
+/// - topics - `["set_reserve"]`
+/// - data - `[asset: Address, index: u32]`
+#[contractevent(data_format = "vec")]
+pub struct SetReserve {
+    pub asset: Address,
+    pub index: u32,
+}
+
+/// Emitted when pool status is updated (non-admin)
+///
+/// - topics - `["set_status"]`
+/// - data - `new_status: u32`
+#[contractevent(topics = ["set_status"], data_format = "single-value")]
+pub struct SetStatus {
+    pub new_status: u32,
+}
+
+/// Emitted when pool status is updated by admin
+///
+/// - topics - `["set_status", admin: Address]`
+/// - data - `pool_status: u32`
+#[contractevent(topics = ["set_status"], data_format = "single-value")]
+pub struct SetStatusAdmin {
+    #[topic]
+    pub admin: Address,
+    pub pool_status: u32,
+}
+
+/// Emitted when reserve emissions are updated
+///
+/// - topics - `["reserve_emission_update"]`
+/// - data - `[res_token_id: u32, eps: u64, expiration: u64]`
+#[contractevent(data_format = "vec")]
+pub struct ReserveEmissionUpdate {
+    pub res_token_id: u32,
+    pub eps: u64,
+    pub expiration: u64,
+}
+
+/// Emitted when emissions are gulped
+///
+/// - topics - `["gulp_emissions"]`
+/// - data - `emissions: i128`
+#[contractevent(data_format = "single-value")]
+pub struct GulpEmissions {
+    pub emissions: i128,
+}
+
+/// Emitted when emissions are claimed
+///
+/// - topics - `["claim", from: Address]`
+/// - data - `[reserve_token_ids: Vec<u32>, amount_claimed: i128]`
+#[contractevent(data_format = "vec")]
+pub struct Claim {
+    #[topic]
+    pub from: Address,
+    pub reserve_token_ids: Vec<u32>,
+    pub amount_claimed: i128,
+}
+
+/// Emitted when bad debt is recorded
+///
+/// - topics - `["bad_debt", user: Address, asset: Address]`
+/// - data - `d_tokens: i128`
+#[contractevent(data_format = "single-value")]
+pub struct BadDebt {
+    #[topic]
+    pub user: Address,
+    #[topic]
+    pub asset: Address,
+    pub d_tokens: i128,
+}
+
+/// Emitted when bad debt is defaulted
+///
+/// - topics - `["defaulted_debt", asset: Address]`
+/// - data - `d_tokens_burnt: i128`
+#[contractevent(data_format = "single-value")]
+pub struct DefaultedDebt {
+    #[topic]
+    pub asset: Address,
+    pub d_tokens_burnt: i128,
+}
+
+/// Emitted when tokens are supplied
+///
+/// - topics - `["supply", asset: Address, from: Address]`
+/// - data - `[tokens_in: i128, b_tokens_minted: i128]`
+#[contractevent(data_format = "vec")]
+pub struct Supply {
+    #[topic]
+    pub asset: Address,
+    #[topic]
+    pub from: Address,
+    pub tokens_in: i128,
+    pub b_tokens_minted: i128,
+}
+
+/// Emitted when tokens are withdrawn
+///
+/// - topics - `["withdraw", asset: Address, from: Address]`
+/// - data - `[tokens_out: i128, b_tokens_burnt: i128]`
+#[contractevent(data_format = "vec")]
+pub struct Withdraw {
+    #[topic]
+    pub asset: Address,
+    #[topic]
+    pub from: Address,
+    pub tokens_out: i128,
+    pub b_tokens_burnt: i128,
+}
+
+/// Emitted when collateral is supplied
+///
+/// - topics - `["supply_collateral", asset: Address, from: Address]`
+/// - data - `[tokens_in: i128, b_tokens_minted: i128]`
+#[contractevent(data_format = "vec")]
+pub struct SupplyCollateral {
+    #[topic]
+    pub asset: Address,
+    #[topic]
+    pub from: Address,
+    pub tokens_in: i128,
+    pub b_tokens_minted: i128,
+}
+
+/// Emitted when collateral is withdrawn
+///
+/// - topics - `["withdraw_collateral", asset: Address, from: Address]`
+/// - data - `[tokens_out: i128, b_tokens_burnt: i128]`
+#[contractevent(data_format = "vec")]
+pub struct WithdrawCollateral {
+    #[topic]
+    pub asset: Address,
+    #[topic]
+    pub from: Address,
+    pub tokens_out: i128,
+    pub b_tokens_burnt: i128,
+}
+
+/// Emitted when tokens are borrowed
+///
+/// - topics - `["borrow", asset: Address, from: Address]`
+/// - data - `[tokens_out: i128, d_tokens_minted: i128]`
+#[contractevent(data_format = "vec")]
+pub struct Borrow {
+    #[topic]
+    pub asset: Address,
+    #[topic]
+    pub from: Address,
+    pub tokens_out: i128,
+    pub d_tokens_minted: i128,
+}
+
+/// Emitted when a loan is repaid
+///
+/// - topics - `["repay", asset: Address, from: Address]`
+/// - data - `[tokens_in: i128, d_tokens_burnt: i128]`
+#[contractevent(data_format = "vec")]
+pub struct Repay {
+    #[topic]
+    pub asset: Address,
+    #[topic]
+    pub from: Address,
+    pub tokens_in: i128,
+    pub d_tokens_burnt: i128,
+}
+
+/// Emitted during a flash loan
+///
+/// - topics - `["flash_loan", asset: Address, from: Address, contract: Address]`
+/// - data - `[tokens_out: i128, d_tokens_minted: i128]`
+#[contractevent(topics = ["flash_loan"], data_format = "vec")]
+pub struct FlashLoanEvent {
+    #[topic]
+    pub asset: Address,
+    #[topic]
+    pub from: Address,
+    #[topic]
+    pub contract: Address,
+    pub tokens_out: i128,
+    pub d_tokens_minted: i128,
+}
+
+/// Emitted when a reserve gulps excess tokens
+///
+/// - topics - `["gulp", asset: Address]`
+/// - data - `token_delta: i128`
+#[contractevent(data_format = "single-value")]
+pub struct Gulp {
+    #[topic]
+    pub asset: Address,
+    pub token_delta: i128,
+}
+
+/// Emitted when a new auction is created
+///
+/// - topics - `["new_auction", auction_type: u32, user: Address]`
+/// - data - `[percent: u32, auction_data: AuctionData]`
+#[contractevent(data_format = "vec")]
+pub struct NewAuction {
+    #[topic]
+    pub auction_type: u32,
+    #[topic]
+    pub user: Address,
+    pub percent: u32,
+    pub auction_data: AuctionData,
+}
+
+/// Emitted when an auction is filled
+///
+/// - topics - `["fill_auction", auction_type: u32, user: Address]`
+/// - data - `[filler: Address, fill_percent: i128, filled_auction_data: AuctionData]`
+#[contractevent(data_format = "vec")]
+pub struct FillAuction {
+    #[topic]
+    pub auction_type: u32,
+    #[topic]
+    pub user: Address,
+    pub filler: Address,
+    pub fill_percent: i128,
+    pub filled_auction_data: AuctionData,
+}
+
+/// Emitted when an auction is deleted
+///
+/// - topics - `["delete_auction", auction_type: u32, user: Address]`
+/// - data - `()`
+#[contractevent(data_format = "single-value")]
+pub struct DeleteAuction {
+    #[topic]
+    pub auction_type: u32,
+    #[topic]
+    pub user: Address,
+    pub empty: (),
+}
 
 pub struct PoolEvents {}
 
 impl PoolEvents {
-    /// Emitted when a new admin is set for a pool
-    ///
-    /// - topics - `["set_admin", admin: Address]`
-    /// - data - `new_admin: Address`
-    ///
-    /// ### Arguments
-    /// * admin - The current admin of the pool
-    /// * new_admin - The new admin of the pool
     pub fn set_admin(e: &Env, admin: Address, new_admin: Address) {
-        let topics = (Symbol::new(&e, "set_admin"), admin);
-        e.events().publish(topics, new_admin);
+        SetAdmin { admin, new_admin }.publish(e);
     }
 
-    /// Emitted when pool parameters are updated
-    ///
-    /// - topics - `["update_pool", admin: Address]`
-    /// - data - `[backstop_take_rate: u32, max_positions: u32, min_collateral: i128]`
-    ///
-    /// ### Arguments
-    /// * admin - The current admin of the pool
-    /// * backstop_take_rate - The new backstop take rate
-    /// * max_positions - The new maximum number of positions
     pub fn update_pool(
         e: &Env,
         admin: Address,
@@ -34,169 +302,89 @@ impl PoolEvents {
         max_positions: u32,
         min_collateral: i128,
     ) {
-        let topics = (Symbol::new(&e, "update_pool"), admin);
-        e.events()
-            .publish(topics, (backstop_take_rate, max_positions, min_collateral));
+        UpdatePool {
+            admin,
+            backstop_take_rate,
+            max_positions,
+            min_collateral,
+        }
+        .publish(e);
     }
 
-    /// Emitted when a new reserve configuration change is queued
-    ///
-    /// - topics - `["queue_set_reserve", admin: Address]`
-    /// - data - `[asset: Address, metadata: ReserveMetadata]`
-    ///
-    /// ### Arguments
-    /// * admin - The current admin of the pool
-    /// * asset - The asset to change the reserve configuration of
-    /// * metadata - The new reserve configuration
     pub fn queue_set_reserve(e: &Env, admin: Address, asset: Address, metadata: ReserveConfig) {
-        let topics = (Symbol::new(&e, "queue_set_reserve"), admin);
-        e.events().publish(topics, (asset, metadata));
+        QueueSetReserve {
+            admin,
+            asset,
+            metadata,
+        }
+        .publish(e);
     }
 
-    /// Emitted when a queued reserve configuration change is cancelled
-    ///
-    /// - topics - `["cancel_set_reserve", admin: Address]`
-    /// - data - `asset: Address`
-    ///
-    /// ### Arguments
-    /// * admin - The current admin of the pool
-    /// * asset - The asset to cancel the reserve configuration change of
     pub fn cancel_set_reserve(e: &Env, admin: Address, asset: Address) {
-        let topics = (Symbol::new(&e, "cancel_set_reserve"), admin);
-        e.events().publish(topics, asset);
+        CancelSetReserve { admin, asset }.publish(e);
     }
 
-    /// Emitted when a reserve configuration change is set
-    ///
-    /// - topics - `["set_reserve"]`
-    /// - data - `[asset: Address, index: u32]`
-    ///
-    /// ### Arguments
-    /// * asset - The asset to change the reserve configuration of
-    /// * index - The reserve index
     pub fn set_reserve(e: &Env, asset: Address, index: u32) {
-        let topics = (Symbol::new(&e, "set_reserve"),);
-        e.events().publish(topics, (asset, index));
+        SetReserve { asset, index }.publish(e);
     }
 
-    /// Emitted when pool status is updated (non-admin)
-    ///
-    /// - topics - `["set_status"]`
-    /// - data - `new_status: PoolStatus`
-    ///
-    /// ### Arguments
-    /// * new_status - The new pool status
     pub fn set_status(e: &Env, new_status: u32) {
-        let topics = (Symbol::new(&e, "set_status"),);
-        e.events().publish(topics, new_status);
+        SetStatus { new_status }.publish(e);
     }
 
-    /// Emitted when pool status is updated by admin
-    ///
-    /// - topics - `["set_status", admin: Address]`
-    /// - data - `pool_status: PoolStatus`
-    ///
-    /// ### Arguments
-    /// * admin - The admin setting the pool status
-    /// * pool_status - The new pool status
     pub fn set_status_admin(e: &Env, admin: Address, pool_status: u32) {
-        let topics = (Symbol::new(&e, "set_status"), admin);
-        e.events().publish(topics, pool_status);
+        SetStatusAdmin { admin, pool_status }.publish(e);
     }
 
-    /// Emitted when reserve emissions are updated
-    ///
-    /// - topics - `["reserve_emission_update"]`
-    /// - data - `[res_token_id: u32, eps: u64, expiration: u64]`
-    ///
-    /// ### Arguments
-    /// * res_token_id - The reserve token ID
-    /// * eps - The new emissions per second
-    /// * expiration - The new expiration time
     pub fn reserve_emission_update(e: &Env, res_token_id: u32, eps: u64, expiration: u64) {
-        let topics = (Symbol::new(e, "reserve_emission_update"),);
-        e.events().publish(topics, (res_token_id, eps, expiration));
+        ReserveEmissionUpdate {
+            res_token_id,
+            eps,
+            expiration,
+        }
+        .publish(e);
     }
 
-    /// Emitted when emissions are gulped
-    ///
-    /// - topics - `["gulp_emissions"]`
-    /// - data - `emissions: i128`
-    ///
-    /// ### Arguments
-    /// * emissions - The amount of emissions gulped
     pub fn gulp_emissions(e: &Env, emissions: i128) {
-        let topics = (Symbol::new(&e, "gulp_emissions"),);
-        e.events().publish(topics, emissions);
+        GulpEmissions { emissions }.publish(e);
     }
 
-    /// Emitted when emissions are claimed
-    ///
-    /// - topics - `["claim", from: Address]`
-    /// - data - `[reserve_token_ids: Vec<u32>, amount_claimed: i128]`
-    ///
-    /// ### Arguments
-    /// * from - The address claiming the emissions
-    /// * reserve_token_ids - The reserve token IDs claimed
-    /// * amount_claimed - The amount claimed
     pub fn claim(e: &Env, from: Address, reserve_token_ids: Vec<u32>, amount_claimed: i128) {
-        let topics = (Symbol::new(&e, "claim"), from);
-        e.events()
-            .publish(topics, (reserve_token_ids, amount_claimed));
+        Claim {
+            from,
+            reserve_token_ids,
+            amount_claimed,
+        }
+        .publish(e);
     }
 
-    /// Emitted when bad debt is recorded
-    ///
-    /// - topics - `["bad_debt", user: Address, asset: Address]`
-    /// - data - `[d_tokens: i128]`
-    ///
-    /// ### Arguments
-    /// * user - The user with bad debt
-    /// * asset - The asset with bad debt
-    /// * d_tokens - The amount of bad debt
     pub fn bad_debt(e: &Env, user: Address, asset: Address, d_tokens: i128) {
-        let topics = (Symbol::new(e, "bad_debt"), user, asset);
-        e.events().publish(topics, d_tokens);
+        BadDebt {
+            user,
+            asset,
+            d_tokens,
+        }
+        .publish(e);
     }
 
-    /// Emitted when bad debt is defaulted
-    ///
-    /// - topics - `["defaulted_debt", asset: Address]`
-    /// - data - `[d_tokens_burnt: i128]`
-    ///
-    /// ### Arguments
-    /// * asset - The asset with defaulted debt
-    /// * d_tokens_burnt - The amount of defaulted d_tokens
     pub fn defaulted_debt(e: &Env, asset: Address, d_tokens_burnt: i128) {
-        let topics = (Symbol::new(e, "defaulted_debt"), asset);
-        e.events().publish(topics, d_tokens_burnt);
+        DefaultedDebt {
+            asset,
+            d_tokens_burnt,
+        }
+        .publish(e);
     }
 
-    /// Emitted when tokens are supplied
-    ///
-    /// - topics - `["supply", asset: Address, from: Address]`
-    /// - data - `[tokens_in: i128, b_tokens_minted: i128]`
-    ///
-    /// ### Arguments
-    /// * asset - The asset
-    /// * from - The address whose position is being modified
-    /// * tokens_in - The amount of tokens sent to the pool
-    /// * b_tokens_minted - The amount of b_tokens minted
     pub fn supply(e: &Env, asset: Address, from: Address, tokens_in: i128, b_tokens_minted: i128) {
-        let topics = (Symbol::new(e, "supply"), asset, from);
-        e.events().publish(topics, (tokens_in, b_tokens_minted));
+        Supply {
+            asset,
+            from,
+            tokens_in,
+            b_tokens_minted,
+        }
+        .publish(e);
     }
 
-    /// Emitted when tokens are withdrawn
-    ///
-    /// - topics - `["withdraw", asset: Address, from: Address]`
-    /// - data - `[tokens_out: i128, b_tokens_burnt: i128]`
-    ///
-    /// ### Arguments
-    /// * asset - The asset
-    /// * from - The address whose position is being modified
-    /// * tokens_out - The amount of tokens withdrawn from the pool
-    /// * b_tokens_burnt - The amount of b_tokens burnt
     pub fn withdraw(
         e: &Env,
         asset: Address,
@@ -204,20 +392,15 @@ impl PoolEvents {
         tokens_out: i128,
         b_tokens_burnt: i128,
     ) {
-        let topics = (Symbol::new(e, "withdraw"), asset, from);
-        e.events().publish(topics, (tokens_out, b_tokens_burnt));
+        Withdraw {
+            asset,
+            from,
+            tokens_out,
+            b_tokens_burnt,
+        }
+        .publish(e);
     }
 
-    /// Emitted when collateral is supplied
-    ///
-    /// - topics - `["supply_collateral", asset: Address, from: Address]`
-    /// - data - `[tokens_in: i128, b_tokens_minted: i128]`
-    ///
-    /// ### Arguments
-    /// * asset - The asset
-    /// * from - The address whose position is being modified
-    /// * tokens_in - The amount of tokens sent to the pool
-    /// * b_tokens_minted - The amount of b_tokens minted
     pub fn supply_collateral(
         e: &Env,
         asset: Address,
@@ -225,20 +408,15 @@ impl PoolEvents {
         tokens_in: i128,
         b_tokens_minted: i128,
     ) {
-        let topics = (Symbol::new(e, "supply_collateral"), asset, from);
-        e.events().publish(topics, (tokens_in, b_tokens_minted));
+        SupplyCollateral {
+            asset,
+            from,
+            tokens_in,
+            b_tokens_minted,
+        }
+        .publish(e);
     }
 
-    /// Emitted when collateral is withdrawn
-    ///
-    /// - topics - `["withdraw_collateral", asset: Address, from: Address]`
-    /// - data - `[tokens_out: i128, b_tokens_burnt: i128]`
-    ///
-    /// ### Arguments
-    /// * asset - The asset
-    /// * from - The address whose position is being modified
-    /// * tokens_out - The amount of tokens withdrawn from the pool
-    /// * b_tokens_burnt - The amount of b_tokens burnt
     pub fn withdraw_collateral(
         e: &Env,
         asset: Address,
@@ -246,51 +424,35 @@ impl PoolEvents {
         tokens_out: i128,
         b_tokens_burnt: i128,
     ) {
-        let topics = (Symbol::new(e, "withdraw_collateral"), asset, from);
-        e.events().publish(topics, (tokens_out, b_tokens_burnt));
+        WithdrawCollateral {
+            asset,
+            from,
+            tokens_out,
+            b_tokens_burnt,
+        }
+        .publish(e);
     }
 
-    /// Emitted when tokens are borrowed
-    ///
-    /// - topics - `["borrow", asset: Address, from: Address]`
-    /// - data - `[tokens_out: i128, d_tokens_minted: i128]`
-    ///
-    /// ### Arguments
-    /// * asset - The asset
-    /// * from - The address whose position is being modified
-    /// * tokens_out - The amount of tokens sent from the pool
-    /// * d_tokens_burnt - The amount of d_tokens burnt
     pub fn borrow(e: &Env, asset: Address, from: Address, tokens_out: i128, d_tokens_minted: i128) {
-        let topics = (Symbol::new(e, "borrow"), asset, from);
-        e.events().publish(topics, (tokens_out, d_tokens_minted));
+        Borrow {
+            asset,
+            from,
+            tokens_out,
+            d_tokens_minted,
+        }
+        .publish(e);
     }
 
-    /// Emitted when a loan is repaid
-    ///
-    /// - topics - `["repay", asset: Address, from: Address]`
-    /// - data - `[tokens_in: i128, d_tokens_burnt: i128]`
-    ///
-    /// ### Arguments
-    /// * asset - The asset
-    /// * from - The address whose position is being modified
-    /// * tokens_in - The amount of tokens sent to the pool
-    /// * d_tokens_burnt - The amount of d_tokens burnt
     pub fn repay(e: &Env, asset: Address, from: Address, tokens_in: i128, d_tokens_burnt: i128) {
-        let topics = (Symbol::new(e, "repay"), asset, from);
-        e.events().publish(topics, (tokens_in, d_tokens_burnt));
+        Repay {
+            asset,
+            from,
+            tokens_in,
+            d_tokens_burnt,
+        }
+        .publish(e);
     }
 
-    /// Emitted during a flash loan
-    ///
-    /// - topics - `["flash_loan", asset: Address, from: Address]`
-    /// - data - `[tokens_out: i128, d_tokens_minted: i128]`
-    ///
-    /// ### Arguments
-    /// * asset - The asset
-    /// * from - The address whose position is being modified
-    /// * contract - The address of the flash loan contract
-    /// * tokens_out - The amount of tokens sent from the pool
-    /// * d_tokens_burnt - The amount of d_tokens burnt
     pub fn flash_loan(
         e: &Env,
         asset: Address,
@@ -299,33 +461,20 @@ impl PoolEvents {
         tokens_out: i128,
         d_tokens_minted: i128,
     ) {
-        let topics = (Symbol::new(e, "flash_loan"), asset, from, contract);
-        e.events().publish(topics, (tokens_out, d_tokens_minted));
+        FlashLoanEvent {
+            asset,
+            from,
+            contract,
+            tokens_out: tokens_out,
+            d_tokens_minted,
+        }
+        .publish(e);
     }
 
-    /// Emitted when a reserve gulps excess tokens
-    ///
-    /// - topics - `["gulp", asset: Address]`
-    /// - data - `[token_delta: i128]`
-    ///
-    /// ### Arguments
-    /// * asset - The asset
-    /// * token_delta - The number of tokens gulped
     pub fn gulp(e: &Env, asset: Address, token_delta: i128) {
-        let topics = (Symbol::new(e, "gulp"), asset);
-        e.events().publish(topics, token_delta);
+        Gulp { asset, token_delta }.publish(e);
     }
 
-    /// Emitted when a new auction is created
-    ///
-    /// - topics - `["new_auction", auction_type: u32, user: Address]`
-    /// - data - `[percent: u32, auction_data: AuctionData]`
-    ///
-    /// ### Arguments
-    /// * auction_type - The type of auction
-    /// * user - The auction user
-    /// * percent - The percent of assets auctioned off
-    /// * auction_data - The auction data
     pub fn new_auction(
         e: &Env,
         auction_type: u32,
@@ -333,21 +482,15 @@ impl PoolEvents {
         percent: u32,
         auction_data: AuctionData,
     ) {
-        let topics = (Symbol::new(e, "new_auction"), auction_type, user);
-        e.events().publish(topics, (percent, auction_data));
+        NewAuction {
+            auction_type,
+            user,
+            percent,
+            auction_data,
+        }
+        .publish(e);
     }
 
-    /// Emitted when an auction is filled
-    ///
-    /// - topics - `["fill_auction", auction_type: u32, user: Address]`
-    /// - data - `[filler: Address, fill_percent: i128, filled_auction_data: AuctionData]`
-    ///
-    /// ### Arguments
-    /// * auction_type - The type of auction
-    /// * user - The auction user
-    /// * filler - The address of the filler
-    /// * fill_percent - The percentage of the auction filled
-    /// * filled_auction_data - The filled auction data
     pub fn fill_auction(
         e: &Env,
         auction_type: u32,
@@ -356,21 +499,22 @@ impl PoolEvents {
         fill_percent: i128,
         filled_auction_data: AuctionData,
     ) {
-        let topics = (Symbol::new(e, "fill_auction"), auction_type, user);
-        e.events()
-            .publish(topics, (filler, fill_percent, filled_auction_data));
+        FillAuction {
+            auction_type,
+            user,
+            filler,
+            fill_percent,
+            filled_auction_data,
+        }
+        .publish(e);
     }
 
-    /// Emitted when an auction is deleted
-    ///
-    /// - topics - `["delete_auction", auction_type: u32, user: Address]`
-    /// - data - `()`
-    ///
-    /// ### Arguments
-    /// * auction_type - The type of auction
-    /// * user - The address of the user
     pub fn delete_auction(e: &Env, auction_type: u32, user: Address) {
-        let topics = (Symbol::new(&e, "delete_auction"), auction_type, user);
-        e.events().publish(topics, ());
+        DeleteAuction {
+            auction_type,
+            user,
+            empty: (),
+        }
+        .publish(e);
     }
 }

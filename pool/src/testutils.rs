@@ -2,10 +2,10 @@
 
 use crate::{
     constants::{SCALAR_12, SCALAR_7},
+    dependencies::{EmitterClient, EMITTER_WASM},
     pool::Reserve,
     storage::{self, ReserveConfig, ReserveData},
     PoolContract,
-    dependencies::{EmitterClient, EMITTER_WASM}
 };
 use sep_40_oracle::testutils::{MockPriceOracleClient, MockPriceOracleWASM};
 use sep_41_token::testutils::{MockTokenClient, MockTokenWASM};

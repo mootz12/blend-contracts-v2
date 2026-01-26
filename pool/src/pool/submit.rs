@@ -1,4 +1,4 @@
-use crate::dependencies::FlashLoanClient;
+use crate::dependencies::ERC3156FlashBorrower;
 use sep_41_token::TokenClient;
 use soroban_sdk::{panic_with_error, Address, Env, Map, Vec};
 
@@ -128,7 +128,7 @@ pub fn execute_submit_with_flash_loan(
         &flash_loan.amount,
     );
     // calls the receiver contract with "from" as the caller
-    FlashLoanClient::new(&e, &flash_loan.contract).exec_op(
+    ERC3156FlashBorrower::new(&e, &flash_loan.contract).exec_op(
         &from,
         &flash_loan.asset,
         &flash_loan.amount,

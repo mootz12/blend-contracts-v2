@@ -2,7 +2,7 @@
 
 use crate::{
     backstop::Q4W,
-    dependencies::{CometClient, COMET_WASM, EmitterClient, EMITTER_WASM},
+    dependencies::{CometClient, EmitterClient, COMET_WASM, EMITTER_WASM},
     storage::{self},
     BackstopContract,
 };

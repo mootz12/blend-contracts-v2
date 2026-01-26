@@ -1,18 +1,139 @@
-use soroban_sdk::{Address, Env, Symbol};
+use soroban_sdk::{contractevent, Address, Env};
+
+/// Emitted when tokens are deposited into a backstop
+///
+/// - topics - `["deposit", pool_address: Address, from: Address]`
+/// - data - `[tokens_in: i128, backstop_shares_minted: i128]`
+#[contractevent(data_format = "vec")]
+pub struct Deposit {
+    #[topic]
+    pub pool_address: Address,
+    #[topic]
+    pub from: Address,
+    pub tokens_in: i128,
+    pub backstop_shares_minted: i128,
+}
+
+/// Emitted when a withdrawal is queued
+///
+/// - topics - `["queue_withdrawal", pool_address: Address, from: Address]`
+/// - data - `[amount: i128, expiration: u64]`
+#[contractevent(data_format = "vec")]
+pub struct QueueWithdrawal {
+    #[topic]
+    pub pool_address: Address,
+    #[topic]
+    pub from: Address,
+    pub amount: i128,
+    pub expiration: u64,
+}
+
+/// Emitted when a withdrawal is dequeued
+///
+/// - topics - `["dequeue_withdrawal", pool_address: Address, from: Address]`
+/// - data - `amount: i128`
+#[contractevent(data_format = "single-value")]
+pub struct DequeueWithdrawal {
+    #[topic]
+    pub pool_address: Address,
+    #[topic]
+    pub from: Address,
+    pub amount: i128,
+}
+
+/// Emitted when tokens are withdrawn from the backstop
+///
+/// - topics - `["withdraw", pool_address: Address, from: Address]`
+/// - data - `[amount: i128, tokens_out: i128]`
+#[contractevent(data_format = "vec")]
+pub struct Withdraw {
+    #[topic]
+    pub pool_address: Address,
+    #[topic]
+    pub from: Address,
+    pub amount: i128,
+    pub tokens_out: i128,
+}
+
+/// Emitted when new emissions are distributed
+///
+/// - topics - `["distribute"]`
+/// - data - `new_tokens_emitted: i128`
+#[contractevent(data_format = "single-value")]
+pub struct Distribute {
+    pub new_tokens_emitted: i128,
+}
+
+/// Emitted when new emissions are gulped
+///
+/// - topics - `["gulp_emissions", pool_address: Address]`
+/// - data - `[new_backstop_emissions: i128, new_pool_emissions: i128]`
+#[contractevent(data_format = "vec")]
+pub struct GulpEmissions {
+    #[topic]
+    pub pool_address: Address,
+    pub new_backstop_emissions: i128,
+    pub new_pool_emissions: i128,
+}
+
+/// Emitted when the reward zone is updated
+///
+/// - topics - `["rw_zone_add"]`
+/// - data - `[to_add: Address, to_remove: Option<Address>]`
+#[contractevent(data_format = "vec")]
+pub struct RwZoneAdd {
+    pub to_add: Address,
+    pub to_remove: Option<Address>,
+}
+
+/// Emitted when a pool is removed from the reward zone
+///
+/// - topics - `["rw_zone_remove"]`
+/// - data - `to_remove: Address`
+#[contractevent(data_format = "single-value")]
+pub struct RwZoneRemove {
+    pub to_remove: Address,
+}
+
+/// Emitted when emissions are claimed
+///
+/// - topics - `["claim", from: Address]`
+/// - data - `amount: i128`
+#[contractevent(data_format = "single-value")]
+pub struct Claim {
+    #[topic]
+    pub from: Address,
+    pub amount: i128,
+}
+
+/// Emitted when tokens are drawn from the backstop
+///
+/// - topics - `["draw", pool_address: Address]`
+/// - data - `[to: Address, amount: i128]`
+#[contractevent(data_format = "vec")]
+pub struct Draw {
+    #[topic]
+    pub pool_address: Address,
+    pub to: Address,
+    pub amount: i128,
+}
+
+/// Emitted when tokens are donated to the backstop
+///
+/// - topics - `["donate", pool_address: Address, from: Address]`
+/// - data - `amount: i128`
+#[contractevent(data_format = "single-value")]
+pub struct Donate {
+    #[topic]
+    pub pool_address: Address,
+    #[topic]
+    pub from: Address,
+    pub amount: i128,
+}
 
 pub struct BackstopEvents {}
 
 impl BackstopEvents {
-    /// Emitted when tokens are deposited into a backstop
-    ///
-    /// - topics - `["deposit", pool_address: Address, from: Address]`
-    /// - data - `[tokens_in: i128, backstop_shares_minted: i128]`
-    ///
-    /// ### Arguments
-    /// * `pool_address` - The address of the pool
-    /// * `from` - The address of the user depositing tokens
-    /// * `tokens_in` - The amount of tokens sent to the backstop
-    /// * `backstop_shares_minted` - The amount of backstop shares minted
     pub fn deposit(
         e: &Env,
         pool_address: Address,
@@ -20,21 +141,15 @@ impl BackstopEvents {
         tokens_in: i128,
         backstop_shares_minted: i128,
     ) {
-        let topics = (Symbol::new(e, "deposit"), pool_address, from);
-        e.events()
-            .publish(topics, (tokens_in, backstop_shares_minted));
+        Deposit {
+            pool_address,
+            from,
+            tokens_in,
+            backstop_shares_minted,
+        }
+        .publish(e);
     }
 
-    /// Emitted when a withdrawal is queued
-    ///
-    /// - topics - `["queue_withdrawal", pool_address: Address, from: Address]`
-    /// - data - `[amount: i128, expiration: u64]`
-    ///
-    /// ### Arguments
-    /// * `pool_address` - The address of the pool
-    /// * `from` - The address of the user queuing the withdrawal
-    /// * `amount` - The amount of shares being queued for withdrawal
-    /// * `expiration` - The expiration timestamp of the withdrawal request
     pub fn queue_withdrawal(
         e: &Env,
         pool_address: Address,
@@ -42,133 +157,79 @@ impl BackstopEvents {
         amount: i128,
         expiration: u64,
     ) {
-        let topics = (Symbol::new(e, "queue_withdrawal"), pool_address, from);
-        e.events().publish(topics, (amount, expiration));
+        QueueWithdrawal {
+            pool_address,
+            from,
+            amount,
+            expiration,
+        }
+        .publish(e);
     }
 
-    /// Emitted when a withdrawal is dequeued
-    ///
-    /// - topics - `["dequeue_withdrawal", pool_address: Address, from: Address]`
-    /// - data - `[amount: i128]`
-    ///
-    /// ### Arguments
-    /// * `pool_address` - The address of the pool
-    /// * `from` - The address of the user dequeuing the withdrawal
-    /// * `amount` - The amount of shares being dequeued
     pub fn dequeue_withdrawal(e: &Env, pool_address: Address, from: Address, amount: i128) {
-        let topics = (Symbol::new(e, "dequeue_withdrawal"), pool_address, from);
-        e.events().publish(topics, amount);
+        DequeueWithdrawal {
+            pool_address,
+            from,
+            amount,
+        }
+        .publish(e);
     }
 
-    /// Emitted when tokens are withdrawn from the backstop
-    ///
-    /// - topics - `["withdraw", pool_address: Address, from: Address]`
-    /// - data - `[amount: i128, tokens_out: i128]`
-    ///
-    /// ### Arguments
-    /// * `pool_address` - The address of the pool
-    /// * `from` - The address of the user withdrawing tokens
-    /// * `amount` - The amount of backstop shares being burned
-    /// * `tokens_out` - The amount of tokens being withdrawn
     pub fn withdraw(e: &Env, pool_address: Address, from: Address, amount: i128, tokens_out: i128) {
-        let topics = (Symbol::new(e, "withdraw"), pool_address, from);
-        e.events().publish(topics, (amount, tokens_out));
+        Withdraw {
+            pool_address,
+            from,
+            amount,
+            tokens_out,
+        }
+        .publish(e);
     }
 
-    /// Emitted when new emissions are distributed
-    /// - topics - `["distribute"]`
-    /// - data - `[new_tokens_emitted: i128]`
-    ///
-    /// ### Arguments
-    /// * `new_tokens_emitted` - The amount of new tokens emitted
     pub fn distribute(e: &Env, new_tokens_emitted: i128) {
-        let topics = (Symbol::new(e, "distribute"),);
-        e.events().publish(topics, new_tokens_emitted);
+        Distribute { new_tokens_emitted }.publish(e);
     }
 
-    /// Emitted when new emissions are gulped
-    ///
-    /// - topics - `["gulp_emissions", pool_address: Address]`
-    /// - data - `[new_backstop_emissions: i128, new_pool_emissions: i128]`
-    ///
-    /// ### Arguments
-    /// * `pool_address` - The address of the pool that gulped emissions
-    /// * `new_backstop_emissions` - The amount of new emissions for the backstop
-    /// * `new_pool_emissions` - The amount of new emissions for the pool
     pub fn gulp_emissions(
         e: &Env,
         pool_address: Address,
         new_backstop_emissions: i128,
         new_pool_emissions: i128,
     ) {
-        let topics = (Symbol::new(e, "gulp_emissions"), pool_address);
-        e.events()
-            .publish(topics, (new_backstop_emissions, new_pool_emissions));
+        GulpEmissions {
+            pool_address,
+            new_backstop_emissions,
+            new_pool_emissions,
+        }
+        .publish(e);
     }
 
-    /// Emitted when the reward zone is updated
-    ///
-    /// - topics - `["rw_zone_add"]`
-    /// - data - `[to_add: Address, to_remove: Address]`
-    ///
-    /// ### Arguments
-    /// * `to_add` - The address to add to the reward zone
-    /// * `to_remove` - The address to remove from the reward zone
     pub fn rw_zone_add(e: &Env, to_add: Address, to_remove: Option<Address>) {
-        let topics = (Symbol::new(e, "rw_zone_add"),);
-        e.events().publish(topics, (to_add, to_remove));
+        RwZoneAdd { to_add, to_remove }.publish(e);
     }
 
-    /// Emitted when a pool is removed from the reward zone
-    ///
-    /// - topics - `["rw_zone_remove", pool_address: Address]`
-    /// - data - `[to_remove: Address]`
-    ///
-    /// ### Arguments
-    /// * `to_remove` - The address to remove from the reward zone
     pub fn rw_zone_remove(e: &Env, to_remove: Address) {
-        let topics = (Symbol::new(e, "rw_zone_remove"),);
-        e.events().publish(topics, to_remove);
+        RwZoneRemove { to_remove }.publish(e);
     }
 
-    /// Emitted when emissions are claimed
-    ///
-    /// - topics - `["claim", from: Address]`
-    /// - data - `[amount: i128]`
-    ///
-    /// ### Arguments
-    /// * `from` - The address of the user claiming emissions
-    /// * `amount` - The amount of LP tokens minted
     pub fn claim(e: &Env, from: Address, amount: i128) {
-        let topics = (Symbol::new(e, "claim"), from);
-        e.events().publish(topics, amount);
+        Claim { from, amount }.publish(e);
     }
 
-    /// Emitted when tokens are drawn from the backstop
-    ///
-    /// - topics - `["draw", pool_address: Address]`
-    /// - data - `[to: Address, amount: i128]`
-    ///
-    /// ### Arguments
-    /// * `pool_address` - The address of the pool
-    /// * `to` - The address receiving the drawn tokens
-    /// * `amount` - The amount of tokens drawn
     pub fn draw(e: &Env, pool_address: Address, to: Address, amount: i128) {
-        let topics = (Symbol::new(e, "draw"), pool_address);
-        e.events().publish(topics, (to, amount));
+        Draw {
+            pool_address,
+            to: to,
+            amount,
+        }
+        .publish(e);
     }
 
-    /// Emitted when tokens are donated to the backstop
-    ///
-    /// - topics - `["donate", pool_address: Address, from: Address]`
-    /// - data - `[amount: i128]`
-    ///
-    /// ### Arguments
-    /// * `pool_address` - The address of the pool
-    /// * `from` - The address of the donor
-    /// * `amount` - The amount of tokens donated
     pub fn donate(e: &Env, pool_address: Address, from: Address, amount: i128) {
-        let topics = (Symbol::new(e, "donate"), pool_address, from);
-        e.events().publish(topics, amount);
+        Donate {
+            pool_address,
+            from,
+            amount,
+        }
+        .publish(e);
     }
 }

@@ -367,7 +367,7 @@ fn test_backstop() {
             (
                 fixture.backstop.address.clone(),
                 (Symbol::new(&fixture.env, "draw"), pool.address.clone()).into_val(&fixture.env),
-                vec![&fixture.env, frodo.to_val(), amount.into_val(&fixture.env),]
+                vec![&fixture.env, frodo.to_val(), amount.into_val(&fixture.env)]
                     .into_val(&fixture.env)
             )
         ]

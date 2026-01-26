@@ -8,7 +8,7 @@ use soroban_sdk::{
 use crate::{PoolFactoryClient, PoolFactoryContract, PoolInitMeta};
 
 mod pool {
-    soroban_sdk::contractimport!(file = "../target/wasm32-unknown-unknown/optimized/pool.wasm");
+    soroban_sdk::contractimport!(file = "../target/wasm32v1-none/release/pool.wasm");
 }
 
 #[test]
