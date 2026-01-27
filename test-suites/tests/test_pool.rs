@@ -80,8 +80,11 @@ fn test_pool_user() {
             }
         )
     );
-    let events = fixture.env.events().all();
-    let event = vec![&fixture.env, events.get_unchecked(events.len() - 2)];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     let event_data: soroban_sdk::Vec<Val> = vec![
         &fixture.env,
         amount.into_val(&fixture.env),
@@ -155,8 +158,11 @@ fn test_pool_user() {
             }
         )
     );
-    let events = fixture.env.events().all();
-    let event = vec![&fixture.env, events.get_unchecked(events.len() - 2)];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     let reserve_data = fixture.read_reserve_data(0, TokenIndex::WETH);
     pool_weth_balance -= amount;
     sam_weth_balance += amount;
@@ -237,8 +243,11 @@ fn test_pool_user() {
             }
         )
     );
-    let events = fixture.env.events().all();
-    let event = vec![&fixture.env, events.get_unchecked(events.len() - 2)];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     let reserve_data = fixture.read_reserve_data(0, TokenIndex::XLM);
     pool_xlm_balance += amount;
     sam_xlm_balance -= amount;
@@ -308,8 +317,11 @@ fn test_pool_user() {
             }
         )
     );
-    let events = fixture.env.events().all();
-    let event = vec![&fixture.env, events.get_unchecked(events.len() - 2)];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     let reserve_data = fixture.read_reserve_data(0, TokenIndex::WETH);
     pool_weth_balance -= amount;
     sam_weth_balance += amount;
@@ -408,9 +420,12 @@ fn test_pool_user() {
             }
         )
     );
-    let events = fixture.env.events().all();
     // @dev: three transfer events follow the pool events, 1 pool event follows
-    let event = vec![&fixture.env, events.get_unchecked(events.len() - 5)];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     let xlm_reserve_data = fixture.read_reserve_data(0, TokenIndex::XLM);
     let est_xlm = sam_xlm_btoken_balance
         .fixed_mul_floor(xlm_reserve_data.b_rate, SCALAR_12)
@@ -424,27 +439,12 @@ fn test_pool_user() {
         10,
     );
     assert_eq!(result.collateral.len(), 0);
-    let event_data: soroban_sdk::Vec<Val> = vec![
+    let wd_event_data: soroban_sdk::Vec<Val> = vec![
         &fixture.env,
         est_xlm.into_val(&fixture.env),
         sam_xlm_btoken_balance.into_val(&fixture.env),
     ];
-    assert_eq!(
-        event,
-        vec![
-            &fixture.env,
-            (
-                pool_fixture.pool.address.clone(),
-                (
-                    Symbol::new(&fixture.env, "withdraw_collateral"),
-                    xlm.address.clone(),
-                    sam.clone()
-                )
-                    .into_val(&fixture.env),
-                event_data.into_val(&fixture.env)
-            )
-        ]
-    );
+
     let weth_reserve_data = fixture.read_reserve_data(0, TokenIndex::WETH);
     let est_weth = sam_weth_dtoken_balance
         .fixed_mul_ceil(weth_reserve_data.d_rate, SCALAR_12)
@@ -459,9 +459,7 @@ fn test_pool_user() {
         10,
     );
     assert_eq!(result.liabilities.len(), 0);
-    // @dev: three transfer events follow the pool events
-    let event = vec![&fixture.env, events.get_unchecked(events.len() - 4)];
-    let event_data: soroban_sdk::Vec<Val> = vec![
+    let repay_event_data: soroban_sdk::Vec<Val> = vec![
         &fixture.env,
         est_weth.into_val(&fixture.env),
         sam_weth_dtoken_balance.into_val(&fixture.env),
@@ -473,12 +471,22 @@ fn test_pool_user() {
             (
                 pool_fixture.pool.address.clone(),
                 (
+                    Symbol::new(&fixture.env, "withdraw_collateral"),
+                    xlm.address.clone(),
+                    sam.clone()
+                )
+                    .into_val(&fixture.env),
+                wd_event_data.into_val(&fixture.env)
+            ),
+            (
+                pool_fixture.pool.address.clone(),
+                (
                     Symbol::new(&fixture.env, "repay"),
                     weth.address.clone(),
                     sam.clone()
                 )
                     .into_val(&fixture.env),
-                event_data.into_val(&fixture.env)
+                repay_event_data.into_val(&fixture.env)
             )
         ]
     );
@@ -508,7 +516,11 @@ fn test_pool_user() {
             }
         )
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     assert_eq!(
         event,
         vec![
@@ -536,7 +548,11 @@ fn test_pool_user() {
     let pre_gulp_reserve = pool_fixture.pool.get_reserve(&xlm.address);
     let gulp_result = pool_fixture.pool.gulp(&xlm.address);
     assert_eq!(fixture.env.auths().len(), 0); // no auth required
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     assert_eq!(
         event,
         vec![
@@ -590,7 +606,11 @@ fn test_pool_config() {
             }
         )
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     assert_eq!(
         event,
         vec![
@@ -639,7 +659,11 @@ fn test_pool_config() {
     fixture.jump(604800); // 1 week
 
     pool_fixture.pool.set_reserve(&blnd.address);
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     let event_data: soroban_sdk::Vec<Val> = vec![
         &fixture.env,
         blnd.address.into_val(&fixture.env),
@@ -697,7 +721,11 @@ fn test_pool_config() {
             )
         ]
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     assert_eq!(
         event,
         vec![
@@ -753,7 +781,11 @@ fn test_pool_config() {
             }
         )
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     assert_eq!(
         event,
         vec![
@@ -787,7 +819,11 @@ fn test_pool_config() {
             }
         )
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     assert_eq!(
         event,
         vec![
@@ -818,7 +854,11 @@ fn test_pool_config() {
             }
         )
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     assert_eq!(
         event,
         vec![
@@ -843,7 +883,11 @@ fn test_pool_config() {
     // Update status (backstop is unhealthy, so this should update to backstop on-ice)
     pool_fixture.pool.update_status();
     assert_eq!(fixture.env.auths().len(), 0);
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     assert_eq!(
         event,
         vec![
@@ -868,7 +912,11 @@ fn test_pool_config() {
     // Update status (backstop is healthy, so this should update to active)
     pool_fixture.pool.update_status();
     assert_eq!(fixture.env.auths().len(), 0);
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
+    let event = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
     assert_eq!(
         event,
         vec![

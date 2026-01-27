@@ -107,12 +107,15 @@ fn test_flashloan() {
     );
 
     // validate events
-    let events = fixture.env.events().all();
+    let events = fixture
+        .env
+        .events()
+        .all()
+        .filter_by_contract(&pool_fixture.pool.address);
 
     let xlm_res_data = pool_fixture.pool.get_reserve(&xlm_address);
     let stable_res_data = pool_fixture.pool.get_reserve(&stable_address);
 
-    let flash_loan_events = vec![&fixture.env, events.get_unchecked(0)];
     let flash_loan_d_tokens_minted = flash_loan
         .amount
         .fixed_div_ceil(xlm_res_data.data.d_rate, SCALAR_12)
@@ -122,8 +125,27 @@ fn test_flashloan() {
         flash_loan.amount.into_val(&fixture.env),
         flash_loan_d_tokens_minted.into_val(&fixture.env),
     ];
+
+    let supply_b_tokens_minted = supply_amount
+        .fixed_div_floor(stable_res_data.data.b_rate, SCALAR_12)
+        .unwrap();
+    let supply_event_data: soroban_sdk::Vec<Val> = vec![
+        &fixture.env,
+        supply_amount.into_val(&fixture.env),
+        supply_b_tokens_minted.into_val(&fixture.env),
+    ];
+
+    let repay_d_tokens_burned = repay_amount
+        .fixed_div_floor(xlm_res_data.data.d_rate, SCALAR_12)
+        .unwrap();
+    let repay_event_data: soroban_sdk::Vec<Val> = vec![
+        &fixture.env,
+        repay_amount.into_val(&fixture.env),
+        repay_d_tokens_burned.into_val(&fixture.env),
+    ];
+
     assert_eq!(
-        flash_loan_events,
+        events,
         vec![
             &fixture.env,
             (
@@ -136,23 +158,7 @@ fn test_flashloan() {
                 )
                     .into_val(&fixture.env),
                 flash_loan_event_data.into_val(&fixture.env),
-            )
-        ]
-    );
-
-    let supply_event = vec![&fixture.env, events.get_unchecked(1)];
-    let supply_b_tokens_minted = supply_amount
-        .fixed_div_floor(stable_res_data.data.b_rate, SCALAR_12)
-        .unwrap();
-    let supply_event_data: soroban_sdk::Vec<Val> = vec![
-        &fixture.env,
-        supply_amount.into_val(&fixture.env),
-        supply_b_tokens_minted.into_val(&fixture.env),
-    ];
-    assert_eq!(
-        supply_event,
-        vec![
-            &fixture.env,
+            ),
             (
                 pool_fixture.pool.address.clone(),
                 (
@@ -162,23 +168,7 @@ fn test_flashloan() {
                 )
                     .into_val(&fixture.env),
                 supply_event_data.into_val(&fixture.env),
-            )
-        ]
-    );
-
-    let repay_event = vec![&fixture.env, events.get_unchecked(2)];
-    let repay_d_tokens_burned = repay_amount
-        .fixed_div_floor(xlm_res_data.data.d_rate, SCALAR_12)
-        .unwrap();
-    let repay_event_data: soroban_sdk::Vec<Val> = vec![
-        &fixture.env,
-        repay_amount.into_val(&fixture.env),
-        repay_d_tokens_burned.into_val(&fixture.env),
-    ];
-    assert_eq!(
-        repay_event,
-        vec![
-            &fixture.env,
+            ),
             (
                 pool_fixture.pool.address.clone(),
                 (

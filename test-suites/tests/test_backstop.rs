@@ -98,14 +98,17 @@ fn test_backstop() {
             }
         )
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
     let event_body: Vec<Val> = vec![
         &fixture.env,
         amount.into_val(&fixture.env),
         result.into_val(&fixture.env),
     ];
     assert_eq!(
-        event,
+        fixture
+            .env
+            .events()
+            .all()
+            .filter_by_contract(&fixture.backstop.address),
         vec![
             &fixture.env,
             (
@@ -132,9 +135,12 @@ fn test_backstop() {
     // Start the next emission cycle
     fixture.emitter.distribute();
     fixture.backstop.distribute();
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
     assert_eq!(
-        event,
+        fixture
+            .env
+            .events()
+            .all()
+            .filter_by_contract(&fixture.backstop.address),
         vec![
             &fixture.env,
             (
@@ -193,9 +199,12 @@ fn test_backstop() {
             }
         )
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
     assert_eq!(
-        event,
+        fixture
+            .env
+            .events()
+            .all()
+            .filter_by_contract(&fixture.backstop.address),
         vec![
             &fixture.env,
             (
@@ -242,14 +251,17 @@ fn test_backstop() {
             }
         )
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
     let event_body: Vec<Val> = vec![
         &fixture.env,
         amount.into_val(&fixture.env),
         result.exp.into_val(&fixture.env),
     ];
     assert_eq!(
-        event,
+        fixture
+            .env
+            .events()
+            .all()
+            .filter_by_contract(&fixture.backstop.address),
         vec![
             &fixture.env,
             (
@@ -306,9 +318,12 @@ fn test_backstop() {
             }
         )
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
     assert_eq!(
-        event,
+        fixture
+            .env
+            .events()
+            .all()
+            .filter_by_contract(&fixture.backstop.address),
         vec![
             &fixture.env,
             (
@@ -359,9 +374,12 @@ fn test_backstop() {
             }
         )
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
     assert_eq!(
-        event,
+        fixture
+            .env
+            .events()
+            .all()
+            .filter_by_contract(&fixture.backstop.address),
         vec![
             &fixture.env,
             (
@@ -404,14 +422,17 @@ fn test_backstop() {
             }
         )
     );
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
     let event_body: Vec<Val> = vec![
         &fixture.env,
         amount.into_val(&fixture.env),
         result.into_val(&fixture.env),
     ];
     assert_eq!(
-        event,
+        fixture
+            .env
+            .events()
+            .all()
+            .filter_by_contract(&fixture.backstop.address),
         vec![
             &fixture.env,
             (
@@ -470,11 +491,29 @@ fn test_backstop() {
     let emitted_blnd_2 = ((14 * 24 * 60 * 60 + 1) * SCALAR_7)
         .fixed_mul_floor(emission_share_2, SCALAR_7)
         .unwrap();
-    let event = vec![&fixture.env, fixture.env.events().all().last_unchecked()];
+    let deposit_event_body: Vec<Val> = vec![
+        &fixture.env,
+        lp_tokens_minted.into_val(&fixture.env),
+        140237010435i128.into_val(&fixture.env),
+    ];
     assert_eq!(
-        event,
+        fixture
+            .env
+            .events()
+            .all()
+            .filter_by_contract(&fixture.backstop.address),
         vec![
             &fixture.env,
+            (
+                fixture.backstop.address.clone(),
+                (
+                    Symbol::new(&fixture.env, "deposit"),
+                    pool.address.clone(),
+                    sam.clone()
+                )
+                    .into_val(&fixture.env),
+                deposit_event_body.into_val(&fixture.env),
+            ),
             (
                 fixture.backstop.address.clone(),
                 (Symbol::new(&fixture.env, "claim"), sam.clone()).into_val(&fixture.env),

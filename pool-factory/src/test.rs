@@ -50,9 +50,8 @@ fn test_pool_factory() {
         &min_collateral,
     );
 
-    let event = vec![&e, e.events().all().last_unchecked()];
     assert_eq!(
-        event,
+        e.events().all().filter_by_contract(&pool_factory_address),
         vec![
             &e,
             (
