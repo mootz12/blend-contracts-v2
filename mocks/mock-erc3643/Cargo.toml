@@ -1,0 +1,18 @@
+[package]
+name = "mock-erc3643"
+version = "0.1.0"
+edition = "2021"
+description = "Mock ERC-3643 Security Token for Blend protocol PoC."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[features]
+testutils = ["soroban-sdk/testutils"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features=["testutils"] }

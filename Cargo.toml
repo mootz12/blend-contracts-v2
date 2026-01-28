@@ -7,6 +7,9 @@ members = [
     "mocks/mock-pool",
     "mocks/mock-pool-factory",
     "mocks/moderc3156",
+    "mocks/mock-identity-registry",
+    "mocks/mock-compliance",
+    "mocks/mock-erc3643",
     "pool-factory",
     "test-suites"
 ]

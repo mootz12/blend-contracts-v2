@@ -1,0 +1,18 @@
+[package]
+name = "mock-identity-registry"
+version = "0.1.0"
+edition = "2021"
+description = "Mock Identity Registry for ERC-3643 compliance in Blend protocol."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[features]
+testutils = ["soroban-sdk/testutils"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features=["testutils"] }

@@ -1,0 +1,18 @@
+[package]
+name = "mock-compliance"
+version = "0.1.0"
+edition = "2021"
+description = "Mock Compliance Contract for ERC-3643 tokens in Blend protocol PoC."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[features]
+testutils = ["soroban-sdk/testutils"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features=["testutils"] }

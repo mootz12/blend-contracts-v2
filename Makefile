@@ -8,6 +8,11 @@ build:
 	stellar contract build --package backstop --optimize
 	stellar contract build --package pool --optimize
 
+	stellar contract build --package mock-identity-registry --optimize
+	stellar contract build --package mock-compliance --optimize
+	stellar contract build --package mock-erc3643 --optimize
+
+
 fmt:
 	cargo fmt --all
 
