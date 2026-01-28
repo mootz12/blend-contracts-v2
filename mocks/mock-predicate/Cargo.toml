@@ -1,0 +1,18 @@
+[package]
+name = "mock-predicate"
+version = "0.1.0"
+edition = "2021"
+description = "Mock Predicate library for transaction authorization in Blend protocol PoC."
+
+[lib]
+crate-type = ["rlib"]
+doctest = false
+
+[features]
+testutils = ["soroban-sdk/testutils"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features=["testutils"] }

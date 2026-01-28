@@ -10,6 +10,7 @@ members = [
     "mocks/mock-identity-registry",
     "mocks/mock-compliance",
     "mocks/mock-erc3643",
+    "mocks/mock-predicate",
     "pool-factory",
     "test-suites"
 ]

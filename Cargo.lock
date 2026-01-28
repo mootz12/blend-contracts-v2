@@ -932,6 +932,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "mock-predicate"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
 name = "moderc3156-example"
 version = "0.1.0"
 dependencies = [
