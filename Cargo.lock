@@ -1032,6 +1032,7 @@ dependencies = [
  "backstop",
  "cast",
  "mock-pool-factory",
+ "mock-predicate",
  "moderc3156-example",
  "sep-40-oracle",
  "sep-41-token",

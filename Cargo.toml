@@ -45,3 +45,6 @@ version = "1.4.0"
 [workspace.dependencies.sep-41-token]
 version = "1.4.0"
 
+[workspace.dependencies.mock-predicate]
+path = "mocks/mock-predicate"
+

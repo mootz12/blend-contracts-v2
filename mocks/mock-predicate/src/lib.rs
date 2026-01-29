@@ -8,7 +8,7 @@
 
 #![no_std]
 
-use soroban_sdk::{Address, Bytes, Env, String, Val, Vec, contracttype};
+use soroban_sdk::{contracttype, Address, Bytes, Env, String, Val, Vec};
 
 /// Valid signature constant for testing - when used, authorization succeeds
 pub const VALID_SIGNATURE: &[u8] = b"valid_signature";
