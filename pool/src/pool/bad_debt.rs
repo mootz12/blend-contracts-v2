@@ -1,6 +1,10 @@
+use soroban_fixed_point_math::SorobanFixedPoint;
 use soroban_sdk::{panic_with_error, Address, Env};
 
-use crate::{dependencies::BackstopClient, events::PoolEvents, storage, AuctionType, PoolError};
+use crate::{
+    constants::SCALAR_7, dependencies::BackstopClient, events::PoolEvents, storage, AuctionType,
+    PoolError,
+};
 
 use super::{calc_pool_backstop_threshold, Pool, User};
 
@@ -15,7 +19,7 @@ pub fn bad_debt(e: &Env, user: &Address) {
         if storage::has_auction(e, &(AuctionType::BadDebtAuction as u32), &backstop) {
             panic_with_error!(e, PoolError::AuctionInProgress);
         }
-        check_and_handle_backstop_bad_debt(e, &mut pool, user, &mut user_state)
+        check_and_handle_backstop_bad_debt(e, &mut pool, user, &mut user_state, 0)
     } else {
         if storage::has_auction(e, &(AuctionType::UserLiquidation as u32), &user) {
             panic_with_error!(e, PoolError::AuctionInProgress);
@@ -94,6 +98,7 @@ pub fn check_and_handle_user_bad_debt(
 /// ### Arguments
 /// * pool - The pool
 /// * backstop_state - The backstop's state
+/// * draw_amount - The amount being drawn from the backstop
 ///
 /// ### Returns
 /// * `true` if the backstop's bad debt was defaulted, `false` otherwise
@@ -102,10 +107,30 @@ pub fn check_and_handle_backstop_bad_debt(
     pool: &mut Pool,
     backstop_address: &Address,
     backstop_state: &mut User,
+    draw_amount: i128,
 ) -> bool {
     if backstop_state.has_liabilities() {
         let backstop_client = BackstopClient::new(e, backstop_address);
-        let pool_backstop_data = backstop_client.pool_data(&e.current_contract_address());
+        let mut pool_backstop_data = backstop_client.pool_data(&e.current_contract_address());
+        // adjust pool backstop data for the draw amount
+        if pool_backstop_data.usdc > 0
+            && pool_backstop_data.tokens > 0
+            && pool_backstop_data.blnd > 0
+        {
+            let usdc_per_token =
+                pool_backstop_data
+                    .usdc
+                    .fixed_div_floor(e, &pool_backstop_data.tokens, &SCALAR_7);
+            let blnd_per_token =
+                pool_backstop_data
+                    .blnd
+                    .fixed_div_floor(e, &pool_backstop_data.tokens, &SCALAR_7);
+            let usdc_draw_amt = usdc_per_token.fixed_mul_floor(e, &draw_amount, &SCALAR_7);
+            let blnd_draw_amt = blnd_per_token.fixed_mul_floor(e, &draw_amount, &SCALAR_7);
+            pool_backstop_data.usdc = pool_backstop_data.usdc.saturating_sub(usdc_draw_amt);
+            pool_backstop_data.blnd = pool_backstop_data.blnd.saturating_sub(blnd_draw_amt);
+            pool_backstop_data.tokens = pool_backstop_data.tokens.saturating_sub(draw_amount);
+        }
         let threshold = calc_pool_backstop_threshold(&pool_backstop_data);
         if threshold < 0_0000003 {
             // ~5% of threshold

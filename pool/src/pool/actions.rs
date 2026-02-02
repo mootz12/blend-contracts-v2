@@ -66,6 +66,8 @@ pub struct FlashLoan {
 pub struct Actions {
     pub spender_transfer: Map<Address, i128>,
     pub pool_transfer: Map<Address, i128>,
+    pub backstop_donate: i128,
+    pub backstop_draw: i128,
     pub check_health: bool,
     pub check_max_util: Vec<Address>,
 }
@@ -76,6 +78,8 @@ impl Actions {
         Actions {
             spender_transfer: Map::new(e),
             pool_transfer: Map::new(e),
+            backstop_donate: 0,
+            backstop_draw: 0,
             check_health: false,
             check_max_util: Vec::new(e),
         }
@@ -89,7 +93,7 @@ impl Actions {
         );
     }
 
-    // Add tokens the pool needs to transfer to "to"
+    /// Add tokens the pool needs to transfer to "to"
     pub fn add_for_pool_transfer(&mut self, asset: &Address, amount: i128) {
         self.pool_transfer.set(
             asset.clone(),
@@ -97,13 +101,12 @@ impl Actions {
         );
     }
 
-    // just a simple flag since we won't need
-    // to switch it back to false once set to true.
+    /// Set the flag to check health after processing all requests
     pub fn do_check_health(&mut self) {
         self.check_health = true
     }
 
-    // Add "reserve" to the list of reserves to check max utilization for
+    /// Add "reserve" to the list of reserves to check max utilization for
     pub fn do_check_max_util(&mut self, reserve: &Address) {
         if self.check_max_util.contains(reserve) {
             return;
@@ -118,6 +121,8 @@ impl Actions {
 /// ### Arguments
 /// * pool - The pool
 /// * from - The sender of the requests
+/// * spender - The address who will be sending tokens to the pool
+/// * to - The address who will be receiving tokens from the pool
 /// * requests - The requests to be processed
 ///
 /// ### Returns
@@ -132,6 +137,8 @@ pub fn build_actions_from_request(
     e: &Env,
     pool: &mut Pool,
     from_state: &mut User,
+    spender: &Address,
+    to: &Address,
     requests: Vec<Request>,
 ) -> Actions {
     let mut actions = Actions::new(e);
@@ -141,7 +148,8 @@ pub fn build_actions_from_request(
         pool.require_action_allowed(e, request.request_type);
         match RequestType::from_u32(e, request.request_type) {
             RequestType::Supply => {
-                let b_tokens_minted = apply_supply(e, &mut actions, pool, from_state, &request);
+                let b_tokens_minted =
+                    apply_supply(e, &mut actions, pool, from_state, spender, &request);
                 PoolEvents::supply(
                     e,
                     request.address.clone(),
@@ -163,7 +171,7 @@ pub fn build_actions_from_request(
             }
             RequestType::SupplyCollateral => {
                 let b_tokens_minted =
-                    apply_supply_collateral(e, &mut actions, pool, from_state, &request);
+                    apply_supply_collateral(e, &mut actions, pool, from_state, spender, &request);
                 PoolEvents::supply_collateral(
                     e,
                     request.address.clone(),
@@ -184,7 +192,7 @@ pub fn build_actions_from_request(
                 );
             }
             RequestType::Borrow => {
-                let d_tokens_minted = apply_borrow(e, &mut actions, pool, from_state, &request);
+                let d_tokens_minted = apply_borrow(e, &mut actions, pool, from_state, to, &request);
                 PoolEvents::borrow(
                     e,
                     request.address.clone(),
@@ -207,6 +215,7 @@ pub fn build_actions_from_request(
             RequestType::FillUserLiquidationAuction => {
                 let filled_auction = auctions::fill(
                     e,
+                    &mut actions,
                     pool,
                     0,
                     &request.address,
@@ -228,6 +237,7 @@ pub fn build_actions_from_request(
                 // Note: will fail if input address is not the backstop since there cannot be a bad debt auction for a different address in storage
                 let filled_auction = auctions::fill(
                     e,
+                    &mut actions,
                     pool,
                     1,
                     &request.address,
@@ -249,6 +259,7 @@ pub fn build_actions_from_request(
                 // Note: will fail if input address is not the backstop since there cannot be an interest auction for a different address in storage
                 let filled_auction = auctions::fill(
                     e,
+                    &mut actions,
                     pool,
                     2,
                     &request.address,
@@ -290,10 +301,12 @@ fn apply_supply(
     actions: &mut Actions,
     pool: &mut Pool,
     user: &mut User,
+    spender: &Address,
     request: &Request,
 ) -> i128 {
     let mut reserve = pool.load_reserve(e, &request.address, true);
-    reserve.require_action_allowed(e, request.request_type);
+    let is_user_in_transfer = &user.address == spender;
+    reserve.require_action_allowed(e, request.request_type, is_user_in_transfer);
     let b_tokens_minted = reserve.to_b_token_down(e, request.amount);
     user.add_supply(e, &mut reserve, b_tokens_minted);
     actions.add_for_spender_transfer(&reserve.asset, request.amount);
@@ -341,10 +354,12 @@ fn apply_supply_collateral(
     actions: &mut Actions,
     pool: &mut Pool,
     user: &mut User,
+    spender: &Address,
     request: &Request,
 ) -> i128 {
     let mut reserve = pool.load_reserve(e, &request.address, true);
-    reserve.require_action_allowed(e, request.request_type);
+    let is_user_in_transfer = &user.address == spender;
+    reserve.require_action_allowed(e, request.request_type, is_user_in_transfer);
     let b_tokens_minted = reserve.to_b_token_down(e, request.amount);
     user.add_collateral(e, &mut reserve, b_tokens_minted);
     actions.add_for_spender_transfer(&reserve.asset, request.amount);
@@ -393,10 +408,12 @@ fn apply_borrow(
     actions: &mut Actions,
     pool: &mut Pool,
     user: &mut User,
+    to: &Address,
     request: &Request,
 ) -> i128 {
     let mut reserve = pool.load_reserve(e, &request.address, true);
-    reserve.require_action_allowed(e, request.request_type);
+    let is_user_in_transfer = &user.address == to;
+    reserve.require_action_allowed(e, request.request_type, is_user_in_transfer);
     let d_tokens_minted = reserve.to_d_token_up(e, request.amount);
     user.add_liabilities(e, &mut reserve, d_tokens_minted);
     reserve.require_utilization_below_100(e);

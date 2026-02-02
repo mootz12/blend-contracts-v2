@@ -2,7 +2,7 @@ use crate::{
     constants::SCALAR_7,
     dependencies::BackstopClient,
     errors::PoolError,
-    pool::{check_and_handle_backstop_bad_debt, Pool, User},
+    pool::{check_and_handle_backstop_bad_debt, Actions, Pool, User},
     storage,
 };
 use cast::i128;
@@ -95,35 +95,43 @@ pub fn create_bad_debt_auction_data(
 #[allow(clippy::inconsistent_digit_grouping)]
 pub fn fill_bad_debt_auction(
     e: &Env,
+    actions: &mut Actions,
     pool: &mut Pool,
     auction_data: &AuctionData,
-    filler_state: &mut User,
+    filler: &Address,
     is_full_fill: bool,
 ) {
     let backstop_address = storage::get_backstop(e);
-    if filler_state.address == backstop_address {
+    if filler == &backstop_address {
         panic_with_error!(e, PoolError::BadRequest);
     }
     let mut backstop_state = User::load(e, &backstop_address);
 
     // bid only contains d_token asset amounts
-    backstop_state.rm_positions(e, pool, map![e], auction_data.bid.clone());
-    filler_state.add_positions(e, pool, map![e], auction_data.bid.clone());
+    for (bid_asset, bid_amount) in auction_data.bid.iter() {
+        let mut reserve = pool.load_reserve(e, &bid_asset, true);
+        let asset_amount = reserve.to_asset_from_d_token(e, bid_amount);
+        actions.add_for_spender_transfer(&reserve.asset, asset_amount);
+        backstop_state.remove_liabilities(e, &mut reserve, bid_amount);
+        pool.cache_reserve(reserve);
+    }
 
     let backstop_client = BackstopClient::new(e, &backstop_address);
     let backstop_token_id = backstop_client.backstop_token();
-    let lot_amount = auction_data.lot.get(backstop_token_id).unwrap_or(0);
+    let lot_amount = auction_data.lot.get(backstop_token_id.clone()).unwrap_or(0);
     if lot_amount > 0 {
-        backstop_client.draw(
-            &e.current_contract_address(),
-            &lot_amount,
-            &filler_state.address,
-        );
+        actions.backstop_draw += lot_amount;
     }
 
     if is_full_fill {
         // defaults rest of bad debt if insufficient backstop tokens remain in the backstop
-        check_and_handle_backstop_bad_debt(e, pool, &backstop_address, &mut backstop_state);
+        check_and_handle_backstop_bad_debt(
+            e,
+            pool,
+            &backstop_address,
+            &mut backstop_state,
+            lot_amount,
+        );
     }
     backstop_state.store(e);
 }

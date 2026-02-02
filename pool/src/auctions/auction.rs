@@ -1,7 +1,7 @@
 use crate::{
     constants::SCALAR_7,
     errors::PoolError,
-    pool::{Pool, User},
+    pool::{Actions, Pool, User},
     storage,
 };
 use cast::i128;
@@ -139,6 +139,7 @@ pub fn delete_liquidation(e: &Env, user: &Address) {
 /// of the auction quote
 pub fn fill(
     e: &Env,
+    actions: &mut Actions,
     pool: &mut Pool,
     auction_type: u32,
     user: &Address,
@@ -153,13 +154,20 @@ pub fn fill(
     let is_full_fill = remaining_auction.is_none();
     match AuctionType::from_u32(e, auction_type) {
         AuctionType::UserLiquidation => {
-            fill_user_liq_auction(e, pool, &to_fill_auction, user, filler_state, is_full_fill)
+            fill_user_liq_auction(e, actions, pool, &to_fill_auction, user, is_full_fill)
         }
         AuctionType::BadDebtAuction => {
-            fill_bad_debt_auction(e, pool, &to_fill_auction, filler_state, is_full_fill);
+            fill_bad_debt_auction(
+                e,
+                actions,
+                pool,
+                &to_fill_auction,
+                &filler_state.address,
+                is_full_fill,
+            );
         }
         AuctionType::InterestAuction => {
-            fill_interest_auction(e, pool, &to_fill_auction, &filler_state.address)
+            fill_interest_auction(e, actions, pool, &to_fill_auction, &filler_state.address)
         }
     };
 

@@ -70,6 +70,23 @@ impl User {
         if amount <= 0 {
             panic_with_error!(e, PoolError::InvalidDTokenMintAmount)
         }
+
+        // // RWA: Check that "user" can legally repay "amount" of the reserve's underlying asset
+        // // note this is duped, might make sense to optimize away
+        // if reserve.config.erc_3643 {
+        //     let as_underlying = reserve.to_asset_from_d_token(&e, amount);
+        //     let rwa_client = ERC3643Client::new(e, &reserve.asset);
+        //     if !(rwa_client.is_verified(&self.address)
+        //         && rwa_client.can_transfer(
+        //             &self.address,
+        //             &e.current_contract_address(),
+        //             &as_underlying,
+        //         ))
+        //     {
+        //         panic_with_error!(e, PoolError::ERC3643Violation)
+        //     }
+        // }
+
         let balance = self.get_liabilities(reserve.config.index);
         self.update_d_emissions(e, reserve, balance);
         self.positions
@@ -131,6 +148,23 @@ impl User {
         if amount <= 0 {
             panic_with_error!(e, PoolError::InvalidBTokenMintAmount)
         }
+
+        // // RWA: Check that "user" can legally hold "amount" of the reserve's underlying asset
+        // // note this is duped, might make sense to optimize away
+        // if reserve.config.erc_3643 {
+        //     let as_underlying = reserve.to_asset_from_b_token(&e, amount);
+        //     let rwa_client = ERC3643Client::new(e, &reserve.asset);
+        //     if !(rwa_client.is_verified(&self.address)
+        //         && rwa_client.can_transfer(
+        //             &e.current_contract_address(),
+        //             &self.address,
+        //             &as_underlying,
+        //         ))
+        //     {
+        //         panic_with_error!(e, PoolError::ERC3643Violation)
+        //     }
+        // }
+
         let balance = self.get_collateral(reserve.config.index);
         self.update_b_emissions(e, reserve, self.get_total_supply(reserve.config.index));
         self.positions
@@ -170,6 +204,23 @@ impl User {
         if amount <= 0 {
             panic_with_error!(e, PoolError::InvalidBTokenMintAmount)
         }
+
+        // // RWA: Check that "user" can legally hold "amount" of the reserve's underlying asset
+        // // note this is duped, might make sense to optimize away
+        // if reserve.config.erc_3643 {
+        //     let as_underlying = reserve.to_asset_from_b_token(&e, amount);
+        //     let rwa_client = ERC3643Client::new(e, &reserve.asset);
+        //     if !(rwa_client.is_verified(&self.address)
+        //         && rwa_client.can_transfer(
+        //             &e.current_contract_address(),
+        //             &self.address,
+        //             &as_underlying,
+        //         ))
+        //     {
+        //         panic_with_error!(e, PoolError::ERC3643Violation)
+        //     }
+        // }
+
         let balance = self.get_supply(reserve.config.index);
         self.update_b_emissions(e, reserve, self.get_total_supply(reserve.config.index));
         self.positions
@@ -220,30 +271,6 @@ impl User {
             if amount > 0 {
                 let mut reserve = pool.load_reserve(e, &asset, true);
                 self.remove_liabilities(e, &mut reserve, amount);
-                pool.cache_reserve(reserve);
-            }
-        }
-    }
-
-    /// Adds positions to a user - does not consider supply
-    pub fn add_positions(
-        &mut self,
-        e: &Env,
-        pool: &mut Pool,
-        collateral_amounts: Map<Address, i128>,
-        liability_amounts: Map<Address, i128>,
-    ) {
-        for (asset, amount) in collateral_amounts.iter() {
-            if amount > 0 {
-                let mut reserve = pool.load_reserve(e, &asset, true);
-                self.add_collateral(e, &mut reserve, amount);
-                pool.cache_reserve(reserve);
-            }
-        }
-        for (asset, amount) in liability_amounts.iter() {
-            if amount > 0 {
-                let mut reserve = pool.load_reserve(e, &asset, true);
-                self.add_liabilities(e, &mut reserve, amount);
                 pool.cache_reserve(reserve);
             }
         }

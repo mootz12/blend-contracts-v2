@@ -2,7 +2,7 @@ use crate::{
     auctions::{self, AuctionData},
     emissions::{self, ReserveEmissionMetadata},
     events::PoolEvents,
-    pool::{self, FlashLoan, Positions, Request, Reserve},
+    pool::{self, Positions, Request, Reserve},
     storage::{self, ReserveConfig},
     PoolConfig, PoolError, ReserveEmissionData, UserEmissionData,
 };
@@ -142,26 +142,53 @@ pub trait Pool {
         requests: Vec<Request>,
     ) -> Positions;
 
-    /// Submit flash loan and a set of requests to the pool where `from` takes on the position. The flash loan will be invoked using
-    /// the `flash_loan` arguments and `from` as the caller. For the requests, `from` sends any required tokens to the pool
-    /// using transfer_from and receives any tokens sent from the pool.
+    // /// Submit flash loan and a set of requests to the pool where `from` takes on the position. The flash loan will be invoked using
+    // /// the `flash_loan` arguments and `from` as the caller. For the requests, `from` sends any required tokens to the pool
+    // /// using transfer_from and receives any tokens sent from the pool.
+    // ///
+    // /// Returns the new positions for `from`
+    // ///
+    // /// ### Arguments
+    // /// * `from` - The address of the user whose positions are being modified and also the address of
+    // /// the user who is sending and receiving the tokens to the pool.
+    // /// * `flash_loan` - Arguments relative to the flash loan: receiver contract, asset and borroed amount.
+    // /// * `requests` - A vec of requests to be processed
+    // ///
+    // /// ### Panics
+    // /// If the request is not able to be completed for cases like insufficient funds ,insufficient allowance, or invalid health factor
+    // fn flash_loan(
+    //     e: Env,
+    //     from: Address,
+    //     flash_loan: FlashLoan,
+    //     requests: Vec<Request>,
+    // ) -> Positions;
+
+    /// (Only RWA-Admin) Submit an authorized transfer on behalf of another address. This can only be submitted for
+    /// an RWA enabled reserve in the pool, and must be signed by the RWA admin of the reserve.
     ///
-    /// Returns the new positions for `from`
+    /// Forces the transfer of `amount` of `asset` bTokens to `to`.
+    ///
+    /// Returns the value of bTokens transferred in the `assets` underlying at the time of transfer.
     ///
     /// ### Arguments
-    /// * `from` - The address of the user whose positions are being modified and also the address of
-    /// the user who is sending and receiving the tokens to the pool.
-    /// * `flash_loan` - Arguments relative to the flash loan: receiver contract, asset and borroed amount.
-    /// * `requests` - A vec of requests to be processed
+    /// * `asset` - The underlying asset to transfer
+    /// * `from` - The address to transfer the asset from
+    /// * `to` - The address to transfer the asset to
+    /// * `amount` - The amount of the bTokens to transfer
+    /// * `collateral` - If the bToken is supplied as collateral or not
     ///
     /// ### Panics
-    /// If the request is not able to be completed for cases like insufficient funds ,insufficient allowance, or invalid health factor
-    fn flash_loan(
+    /// If the reserve for `asset` is not RWA enabled
+    /// If the RWA admin did not sign the transaction
+    /// If `from` does not have sufficient bToken balance to cover the transfer
+    fn authorized_transfer(
         e: Env,
+        asset: Address,
         from: Address,
-        flash_loan: FlashLoan,
-        requests: Vec<Request>,
-    ) -> Positions;
+        to: Address,
+        amount: i128,
+        collateral: bool,
+    ) -> i128;
 
     /// Update the pool status based on the backstop state - backstop triggered status' are odd numbers
     /// * 1 = backstop active - if the minimum backstop deposit has been reached
@@ -481,16 +508,44 @@ impl Pool for PoolContract {
         pool::execute_submit(&e, &from, &spender, &to, requests, true)
     }
 
-    fn flash_loan(
-        e: Env,
-        from: Address,
-        flash_loan: FlashLoan,
-        requests: Vec<Request>,
-    ) -> Positions {
-        storage::extend_instance(&e);
-        from.require_auth();
+    // fn flash_loan(
+    //     e: Env,
+    //     from: Address,
+    //     flash_loan: FlashLoan,
+    //     requests: Vec<Request>,
+    // ) -> Positions {
+    //     storage::extend_instance(&e);
+    //     from.require_auth();
 
-        pool::execute_submit_with_flash_loan(&e, &from, flash_loan, requests)
+    //     pool::execute_submit_with_flash_loan(&e, &from, flash_loan, requests)
+    // }
+
+    fn authorized_transfer(
+        e: Env,
+        asset: Address,
+        from: Address,
+        to: Address,
+        amount: i128,
+        collateral: bool,
+    ) -> i128 {
+        storage::extend_instance(&e);
+
+        let (underlying_amount, rwa_admin) =
+            pool::execute_authorized_transfer(&e, &asset, &from, &to, amount, collateral);
+        rwa_admin.require_auth();
+
+        PoolEvents::authorized_transfer(
+            &e,
+            asset,
+            from,
+            to,
+            rwa_admin,
+            underlying_amount,
+            amount,
+            collateral,
+        );
+
+        underlying_amount
     }
 
     fn update_status(e: Env) -> u32 {

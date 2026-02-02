@@ -143,7 +143,8 @@ impl Reserve {
     ///
     /// ### Arguments
     /// * `action_type` - The type of action being performed
-    pub fn require_action_allowed(&self, e: &Env, action_type: u32) {
+    /// * `is_user_in_transfer` - Whether the user whose position is modified is also involved in the token transfer
+    pub fn require_action_allowed(&self, e: &Env, action_type: u32, is_user_in_transfer: bool) {
         // disable borrowing or auction cancellation for any non-active pool and disable supplying for any frozen pool
         if !self.config.enabled {
             if action_type == RequestType::Supply as u32
@@ -152,6 +153,16 @@ impl Reserve {
             {
                 panic_with_error!(e, PoolError::ReserveDisabled);
             }
+        }
+
+        // Prevent minting B/D tokens on behalf of another user for RWA reserves
+        if self.config.rwa
+            && !is_user_in_transfer
+            && (action_type == RequestType::Supply as u32
+                || action_type == RequestType::SupplyCollateral as u32
+                || action_type == RequestType::Borrow as u32)
+        {
+            panic_with_error!(e, PoolError::RwaNoOnBehalfOf);
         }
     }
 

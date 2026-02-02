@@ -75,6 +75,23 @@ pub fn execute_queue_set_reserve(e: &Env, asset: &Address, metadata: &ReserveCon
         require_valid_reserve_metadata_changes(e, &storage::get_res_config(e, asset), metadata);
     }
 
+    // if reserve is an RWA, require a rwa_admin address to set and authorize the changes
+    // and validate it can't be borrowed against
+    if metadata.rwa {
+        match &metadata.rwa_admin {
+            Some(rwa_admin) => {
+                rwa_admin.require_auth();
+            }
+            None => {
+                panic_with_error!(e, PoolError::InvalidReserveMetadata);
+            }
+        }
+
+        if metadata.l_factor > 0 {
+            panic_with_error!(e, PoolError::InvalidReserveMetadata);
+        }
+    }
+
     let mut unlock_time = e.ledger().timestamp();
     // require a timelock if pool status is not setup
     if storage::get_pool_config(e).status != 6 {
@@ -159,6 +176,8 @@ fn initialize_reserve(e: &Env, asset: &Address, config: &ReserveConfig) -> u32 {
         r_three: config.r_three,
         reactivity: config.reactivity,
         supply_cap: config.supply_cap,
+        rwa_admin: config.rwa_admin.clone(),
+        rwa: config.rwa,
         enabled: config.enabled,
     };
     storage::set_res_config(e, asset, &reserve_config);

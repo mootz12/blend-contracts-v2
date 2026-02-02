@@ -3,7 +3,7 @@ use soroban_fixed_point_math::SorobanFixedPoint;
 use soroban_sdk::{map, panic_with_error, Address, Env, Vec};
 
 use crate::auctions::auction::AuctionData;
-use crate::pool::{check_and_handle_user_bad_debt, Pool, PositionData, User};
+use crate::pool::{check_and_handle_user_bad_debt, Actions, Pool, PositionData, User};
 use crate::Positions;
 use crate::{errors::PoolError, storage};
 
@@ -205,15 +205,28 @@ pub fn create_user_liq_auction_data(
 
 pub fn fill_user_liq_auction(
     e: &Env,
+    actions: &mut Actions,
     pool: &mut Pool,
     auction_data: &AuctionData,
     user: &Address,
-    filler_state: &mut User,
     is_full_fill: bool,
 ) {
     let mut user_state = User::load(e, user);
-    user_state.rm_positions(e, pool, auction_data.lot.clone(), auction_data.bid.clone());
-    filler_state.add_positions(e, pool, auction_data.lot.clone(), auction_data.bid.clone());
+    for (bid_asset, bid_amount) in auction_data.bid.iter() {
+        let mut reserve = pool.load_reserve(e, &bid_asset, true);
+        let asset_amount = reserve.to_asset_from_d_token(e, bid_amount);
+        actions.add_for_spender_transfer(&reserve.asset, asset_amount);
+        user_state.remove_liabilities(e, &mut reserve, bid_amount);
+        pool.cache_reserve(reserve);
+    }
+
+    for (lot_asset, lot_amount) in auction_data.lot.iter() {
+        let mut reserve = pool.load_reserve(e, &lot_asset, true);
+        let asset_amount = reserve.to_asset_from_b_token(e, lot_amount);
+        actions.add_for_pool_transfer(&reserve.asset, asset_amount);
+        user_state.remove_collateral(e, &mut reserve, lot_amount);
+        pool.cache_reserve(reserve);
+    }
 
     if is_full_fill {
         check_and_handle_user_bad_debt(e, pool, user, &mut user_state);

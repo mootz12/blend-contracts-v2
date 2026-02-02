@@ -52,4 +52,8 @@ pub enum PoolError {
     InvalidLot = 1222,
     ReserveDisabled = 1223,
     MinCollateralNotMet = 1224,
+
+    // RWA errors
+    RwaViolation = 1225,
+    RwaNoOnBehalfOf = 1226,
 }

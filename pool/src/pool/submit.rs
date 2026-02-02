@@ -1,6 +1,6 @@
-use crate::dependencies::ERC3156FlashBorrower;
+use crate::dependencies::{BackstopClient, ERC3156FlashBorrower};
 use sep_41_token::TokenClient;
-use soroban_sdk::{panic_with_error, Address, Env, Map, Vec};
+use soroban_sdk::{panic_with_error, vec, Address, Env, Map, Vec};
 
 use crate::{events::PoolEvents, storage, AuctionType, PoolError};
 
@@ -36,12 +36,13 @@ pub fn execute_submit(
     {
         panic_with_error!(e, &PoolError::BadRequest);
     }
+
     let mut pool = Pool::load(e);
     let mut from_state = User::load(e, from);
 
     let prev_positions_count = from_state.positions.effective_count();
 
-    let actions = build_actions_from_request(e, &mut pool, &mut from_state, requests);
+    let actions = build_actions_from_request(e, &mut pool, &mut from_state, spender, to, requests);
 
     validate_submit(
         e,
@@ -65,8 +66,63 @@ pub fn execute_submit(
     from_state.positions
 }
 
+/// @dev - MUST RETURN RWA_ADMIN SO AUTH CAN BE ENFORCED
+/// Returns a tuple of (underlying, rwa_admin)
+pub fn execute_authorized_transfer(
+    e: &Env,
+    from: &Address,
+    to: &Address,
+    asset: &Address,
+    btoken_amount: i128,
+    collateral: bool,
+) -> (i128, Address) {
+    if from == to {
+        panic_with_error!(e, &PoolError::BadRequest);
+    }
+    let mut pool = Pool::load(e);
+    let mut from_state = User::load(e, from);
+    let mut to_state = User::load(e, to);
+    let prev_positions_count = from_state.positions.effective_count();
+
+    let mut reserve = pool.load_reserve(e, asset, true);
+    if !reserve.config.rwa {
+        panic_with_error!(e, &PoolError::BadRequest);
+    }
+    let rwa_admin = match reserve.config.rwa_admin {
+        None => panic_with_error!(e, &PoolError::BadRequest),
+        Some(ref rwa_admin) => rwa_admin.clone(),
+    };
+
+    if collateral {
+        from_state.remove_collateral(e, &mut reserve, btoken_amount);
+        to_state.add_collateral(e, &mut reserve, btoken_amount);
+    } else {
+        from_state.remove_supply(e, &mut reserve, btoken_amount);
+        to_state.add_supply(e, &mut reserve, btoken_amount);
+    }
+
+    let amount = reserve.to_asset_from_b_token(e, btoken_amount);
+    pool.cache_reserve(reserve);
+
+    validate_submit(
+        e,
+        &mut pool,
+        &from_state,
+        prev_positions_count,
+        collateral,
+        &vec![e, asset.clone()],
+    );
+
+    pool.store_cached_reserves(e);
+    from_state.store(e);
+    to_state.store(e);
+
+    (amount, rwa_admin)
+}
+
 /// Same as `execute_submit` but specifically made for performing a flash loan borrow before
 /// the other submitted requests.
+#[allow(unused)]
 pub fn execute_submit_with_flash_loan(
     e: &Env,
     from: &Address,
@@ -88,7 +144,7 @@ pub fn execute_submit_with_flash_loan(
         let mut reserve = pool.load_reserve(e, &flash_loan.asset, true);
         let d_tokens_minted = reserve.to_d_token_up(e, flash_loan.amount);
         from_state.add_liabilities(e, &mut reserve, d_tokens_minted);
-        reserve.require_action_allowed(e, RequestType::Borrow as u32);
+        reserve.require_action_allowed(e, RequestType::Borrow as u32, true);
         reserve.require_utilization_below_100(e);
 
         pool.cache_reserve(reserve);
@@ -103,7 +159,8 @@ pub fn execute_submit_with_flash_loan(
         );
     }
 
-    let mut actions = build_actions_from_request(e, &mut pool, &mut from_state, requests);
+    let mut actions =
+        build_actions_from_request(e, &mut pool, &mut from_state, from, from, requests);
 
     // require flash loaned asset is added to check_max_util
     if !actions.check_max_util.contains(&flash_loan.asset) {
@@ -230,6 +287,8 @@ fn handle_transfer_with_allowance(e: &Env, actions: &Actions, spender: &Address,
             token.transfer(&e.current_contract_address(), to, &amount);
         }
     }
+
+    handle_backstop_transfers(e, actions, spender, to);
 }
 
 fn handle_transfers(e: &Env, actions: &Actions, spender: &Address, to: &Address) {
@@ -241,6 +300,27 @@ fn handle_transfers(e: &Env, actions: &Actions, spender: &Address, to: &Address)
     // transfer tokens from pool to "to"
     for (address, amount) in actions.pool_transfer.iter() {
         TokenClient::new(e, &address).transfer(&e.current_contract_address(), to, &amount);
+    }
+
+    handle_backstop_transfers(e, actions, spender, to);
+}
+
+fn handle_backstop_transfers(e: &Env, actions: &Actions, spender: &Address, to: &Address) {
+    if actions.backstop_donate == 0 && actions.backstop_draw == 0 {
+        return;
+    }
+
+    let backstop = storage::get_backstop(e);
+    let backstop_client = BackstopClient::new(e, &backstop);
+    if actions.backstop_donate > 0 {
+        backstop_client.donate(
+            &spender,
+            &e.current_contract_address(),
+            &actions.backstop_donate,
+        );
+    }
+    if actions.backstop_draw > 0 {
+        backstop_client.draw(&e.current_contract_address(), &actions.backstop_draw, &to);
     }
 }
 

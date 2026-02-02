@@ -219,6 +219,25 @@ pub struct Repay {
     pub d_tokens_burnt: i128,
 }
 
+/// Emitted when an authorized transfer occurs
+///
+/// - topics - `["authorized_transfer", asset: Address, from: Address, to: Address, admin: Address]`
+/// - data - `[tokens: i128, b_tokens: i128, collateral: bool]`
+#[contractevent(data_format = "vec")]
+pub struct AuthorizedTransfer {
+    #[topic]
+    pub asset: Address,
+    #[topic]
+    pub from: Address,
+    #[topic]
+    pub to: Address,
+    #[topic]
+    pub admin: Address,
+    pub tokens: i128,
+    pub b_tokens: i128,
+    pub collateral: bool,
+}
+
 /// Emitted during a flash loan
 ///
 /// - topics - `["flash_loan", asset: Address, from: Address, contract: Address]`
@@ -449,6 +468,28 @@ impl PoolEvents {
             from,
             tokens_in,
             d_tokens_burnt,
+        }
+        .publish(e);
+    }
+
+    pub fn authorized_transfer(
+        e: &Env,
+        asset: Address,
+        from: Address,
+        to: Address,
+        admin: Address,
+        tokens: i128,
+        b_tokens: i128,
+        collateral: bool,
+    ) {
+        AuthorizedTransfer {
+            asset,
+            from,
+            to,
+            admin,
+            tokens,
+            b_tokens,
+            collateral,
         }
         .publish(e);
     }

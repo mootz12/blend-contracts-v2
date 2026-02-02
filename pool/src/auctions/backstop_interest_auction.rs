@@ -1,8 +1,11 @@
 use crate::{
-    constants::SCALAR_7, dependencies::BackstopClient, errors::PoolError, pool::Pool, storage,
+    constants::SCALAR_7,
+    dependencies::BackstopClient,
+    errors::PoolError,
+    pool::{Actions, Pool},
+    storage,
 };
 use cast::i128;
-use sep_41_token::TokenClient;
 use soroban_fixed_point_math::SorobanFixedPoint;
 use soroban_sdk::{map, panic_with_error, Address, Env, Vec};
 
@@ -85,6 +88,7 @@ pub fn create_interest_auction_data(
 
 pub fn fill_interest_auction(
     e: &Env,
+    actions: &mut Actions,
     pool: &mut Pool,
     auction_data: &AuctionData,
     filler: &Address,
@@ -96,13 +100,9 @@ pub fn fill_interest_auction(
     }
     let backstop_client = BackstopClient::new(&e, &backstop);
     let backstop_token: Address = backstop_client.backstop_token();
-    let backstop_token_bid_amount = auction_data.bid.get(backstop_token).unwrap_or(0);
+    let backstop_token_bid_amount = auction_data.bid.get(backstop_token.clone()).unwrap_or(0);
     if backstop_token_bid_amount > 0 {
-        backstop_client.donate(
-            &filler,
-            &e.current_contract_address(),
-            &backstop_token_bid_amount,
-        );
+        actions.backstop_donate += backstop_token_bid_amount;
     }
 
     // lot contains underlying tokens, but the backstop credit must be updated on the reserve
@@ -110,11 +110,7 @@ pub fn fill_interest_auction(
         let mut reserve = pool.load_reserve(e, &res_asset_address, true);
         reserve.data.backstop_credit -= lot_amount;
         pool.cache_reserve(reserve);
-        TokenClient::new(e, &res_asset_address).transfer(
-            &e.current_contract_address(),
-            filler,
-            &lot_amount,
-        );
+        actions.add_for_pool_transfer(&res_asset_address, lot_amount);
     }
 }
 
