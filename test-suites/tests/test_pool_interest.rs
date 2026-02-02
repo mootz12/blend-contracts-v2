@@ -38,6 +38,8 @@ fn test_pool_interest() {
         r_three: 0,
         util: 50,
         supply_cap: i64::MAX as i128,
+        rwa_admin: None,
+        rwa: false,
         enabled: true,
     };
     fixture.create_pool_reserve(0, TokenIndex::XLM, &xlm_config);
@@ -58,6 +60,8 @@ fn test_pool_interest() {
         r_three: 0,
         util: 50,
         supply_cap: i64::MAX as i128,
+        rwa_admin: None,
+        rwa: false,
         enabled: true,
     };
     fixture.create_pool_reserve(0, TokenIndex::STABLE, &stable_config);

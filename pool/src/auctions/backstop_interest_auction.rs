@@ -1320,17 +1320,25 @@ mod tests {
             storage::set_pool_config(&e, &pool_config);
             storage::set_backstop(&e, &backstop_address);
             let mut pool = Pool::load(&e);
-            let backstop_token_balance_pre_fill = backstop_token_client.balance(&backstop_address);
-            fill_interest_auction(&e, &mut pool, &mut auction_data, &samwise);
+            let mut actions = Actions::new(&e);
+            fill_interest_auction(&e, &mut actions, &mut pool, &mut auction_data, &samwise);
             pool.store_cached_reserves(&e);
 
-            assert_eq!(backstop_token_client.balance(&samwise), 25_0000000);
+            assert_eq!(actions.spender_transfer.len(), 0);
+            assert_eq!(actions.backstop_draw, 0);
+
+            assert_eq!(actions.backstop_donate, 75_0000000);
+
+            assert_eq!(actions.pool_transfer.len(), 2);
             assert_eq!(
-                backstop_token_client.balance(&backstop_address),
-                backstop_token_balance_pre_fill + 75_0000000
+                actions.pool_transfer.get_unchecked(underlying_0.clone()),
+                100_0000000
             );
-            assert_eq!(underlying_0_client.balance(&samwise), 100_0000000);
-            assert_eq!(underlying_1_client.balance(&samwise), 25_0000000);
+            assert_eq!(
+                actions.pool_transfer.get_unchecked(underlying_1.clone()),
+                25_0000000
+            );
+
             // verify only filled backstop credits get deducted from total
             let reserve_0_data = storage::get_res_data(&e, &underlying_0);
             assert_eq!(reserve_0_data.backstop_credit, 0);
@@ -1441,17 +1449,25 @@ mod tests {
             storage::set_pool_config(&e, &pool_config);
             storage::set_backstop(&e, &backstop_address);
             let mut pool = Pool::load(&e);
-            let backstop_token_balance_pre_fill = backstop_token_client.balance(&backstop_address);
-            fill_interest_auction(&e, &mut pool, &mut auction_data, &samwise);
+            let mut actions = Actions::new(&e);
+            fill_interest_auction(&e, &mut actions, &mut pool, &mut auction_data, &samwise);
             pool.store_cached_reserves(&e);
 
-            assert_eq!(backstop_token_client.balance(&samwise), 100 * SCALAR_7);
+            assert_eq!(actions.spender_transfer.len(), 0);
+            assert_eq!(actions.backstop_draw, 0);
+
+            assert_eq!(actions.backstop_donate, 0);
+
+            assert_eq!(actions.pool_transfer.len(), 2);
             assert_eq!(
-                backstop_token_client.balance(&backstop_address),
-                backstop_token_balance_pre_fill
+                actions.pool_transfer.get_unchecked(underlying_0.clone()),
+                100_0000000
             );
-            assert_eq!(underlying_0_client.balance(&samwise), 100_0000000);
-            assert_eq!(underlying_1_client.balance(&samwise), 25_0000000);
+            assert_eq!(
+                actions.pool_transfer.get_unchecked(underlying_1.clone()),
+                25_0000000
+            );
+
             // verify only filled backstop credits get deducted from total
             let reserve_0_data = storage::get_res_data(&e, &underlying_0);
             assert_eq!(reserve_0_data.backstop_credit, 0);
@@ -1545,7 +1561,14 @@ mod tests {
             storage::set_backstop(&e, &backstop_address);
 
             let mut pool = Pool::load(&e);
-            fill_interest_auction(&e, &mut pool, &mut auction_data, &backstop_address);
+            let mut actions = Actions::new(&e);
+            fill_interest_auction(
+                &e,
+                &mut actions,
+                &mut pool,
+                &mut auction_data,
+                &backstop_address,
+            );
         });
     }
 }

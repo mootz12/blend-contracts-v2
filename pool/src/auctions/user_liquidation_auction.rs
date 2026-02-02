@@ -246,6 +246,7 @@ mod tests {
 
     use super::*;
     use sep_40_oracle::testutils::Asset;
+    use soroban_fixed_point_math::FixedPoint;
     use soroban_sdk::{
         testutils::{Address as AddressTestTrait, Ledger, LedgerInfo},
         vec, Symbol,
@@ -2647,37 +2648,45 @@ mod tests {
                 max_entry_ttl: 9999999,
             });
             let mut pool = Pool::load(&e);
-            let mut frodo_state = User::load(&e, &frodo);
+            let mut actions = Actions::new(&e);
             fill_user_liq_auction(
                 &e,
+                &mut actions,
                 &mut pool,
                 &mut auction_data,
                 &samwise,
-                &mut frodo_state,
                 true,
             );
-            let frodo_positions = frodo_state.positions;
+            pool.store_cached_reserves(&e);
+
+            assert_eq!(actions.backstop_donate, 0);
+            assert_eq!(actions.backstop_draw, 0);
+
+            assert_eq!(actions.pool_transfer.len(), 2);
+            let reserve_data_0 = storage::get_res_data(&e, &underlying_0);
             assert_eq!(
-                frodo_positions
-                    .collateral
-                    .get(reserve_config_0.index)
-                    .unwrap(),
-                30_5595329
+                actions.pool_transfer.get_unchecked(underlying_0.clone()),
+                30_5595329i128
+                    .fixed_mul_floor(reserve_data_0.b_rate, 10i128.pow(12))
+                    .unwrap()
             );
+            let reserve_data_1 = storage::get_res_data(&e, &underlying_1);
             assert_eq!(
-                frodo_positions
-                    .collateral
-                    .get(reserve_config_1.index)
-                    .unwrap(),
-                1_5395739
+                actions.pool_transfer.get_unchecked(underlying_1.clone()),
+                1_5395739i128
+                    .fixed_mul_floor(reserve_data_1.b_rate, 10i128.pow(12))
+                    .unwrap()
             );
+
+            assert_eq!(actions.spender_transfer.len(), 1);
+            let reserve_data_2 = storage::get_res_data(&e, &underlying_2);
             assert_eq!(
-                frodo_positions
-                    .liabilities
-                    .get(reserve_config_2.index)
-                    .unwrap(),
-                1_2375000
+                actions.spender_transfer.get_unchecked(underlying_2.clone()),
+                1_2375000i128
+                    .fixed_mul_ceil(reserve_data_2.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
+
             let samwise_positions = storage::get_user_positions(&e, &samwise);
             assert_eq!(
                 samwise_positions
@@ -2829,13 +2838,13 @@ mod tests {
                 max_entry_ttl: 9999999,
             });
             let mut pool = Pool::load(&e);
-            let mut frodo_state = User::load(&e, &frodo);
+            let mut actions = Actions::new(&e);
             fill_user_liq_auction(
                 &e,
+                &mut actions,
                 &mut pool,
                 &mut auction_data,
                 &samwise,
-                &mut frodo_state,
                 true,
             );
             let samwise_positions = storage::get_user_positions(&e, &samwise);
@@ -2972,31 +2981,38 @@ mod tests {
                 max_entry_ttl: 9999999,
             });
             let mut pool = Pool::load(&e);
-            let mut frodo_state = User::load(&e, &frodo);
+            let mut actions = Actions::new(&e);
             fill_user_liq_auction(
                 &e,
+                &mut actions,
                 &mut pool,
                 &mut auction_data,
                 &samwise,
-                &mut frodo_state,
                 true,
             );
-            let frodo_positions = frodo_state.positions;
+            pool.store_cached_reserves(&e);
+
+            assert_eq!(actions.backstop_donate, 0);
+            assert_eq!(actions.backstop_draw, 0);
+
+            assert_eq!(actions.pool_transfer.len(), 2);
+            let reserve_data_0 = storage::get_res_data(&e, &underlying_0);
             assert_eq!(
-                frodo_positions
-                    .collateral
-                    .get(reserve_config_0.index)
-                    .unwrap(),
-                30_5595329
+                actions.pool_transfer.get_unchecked(underlying_0.clone()),
+                30_5595329i128
+                    .fixed_mul_floor(reserve_data_0.b_rate, 10i128.pow(12))
+                    .unwrap()
             );
+            let reserve_data_1 = storage::get_res_data(&e, &underlying_1);
             assert_eq!(
-                frodo_positions
-                    .collateral
-                    .get(reserve_config_1.index)
-                    .unwrap(),
-                1_5395739
+                actions.pool_transfer.get_unchecked(underlying_1.clone()),
+                1_5395739i128
+                    .fixed_mul_floor(reserve_data_1.b_rate, 10i128.pow(12))
+                    .unwrap()
             );
-            assert_eq!(frodo_positions.liabilities.len(), 0);
+
+            assert_eq!(actions.spender_transfer.len(), 0);
+
             let samwise_positions = storage::get_user_positions(&e, &samwise);
             assert_eq!(
                 samwise_positions
@@ -3149,39 +3165,43 @@ mod tests {
                 max_entry_ttl: 9999999,
             });
             let mut pool = Pool::load(&e);
-            let mut frodo_state = User::load(&e, &frodo);
+            let mut actions = Actions::new(&e);
             fill_user_liq_auction(
                 &e,
+                &mut actions,
                 &mut pool,
                 &mut auction_data,
                 &samwise,
-                &mut frodo_state,
                 true,
             );
-            let frodo_positions = frodo_state.positions;
-            assert_eq!(frodo_positions.liabilities.len(), 2);
-            assert_eq!(frodo_positions.collateral.len(), 1);
-            assert_eq!(frodo_positions.supply.len(), 0);
+            pool.store_cached_reserves(&e);
+
+            assert_eq!(actions.backstop_donate, 0);
+            assert_eq!(actions.backstop_draw, 0);
+
+            assert_eq!(actions.pool_transfer.len(), 1);
+            let reserve_data_0 = storage::get_res_data(&e, &underlying_0);
             assert_eq!(
-                frodo_positions
-                    .collateral
-                    .get(reserve_config_0.index)
-                    .unwrap(),
-                90_9100000
+                actions.pool_transfer.get_unchecked(underlying_0.clone()),
+                90_9100000i128
+                    .fixed_mul_floor(reserve_data_0.b_rate, 10i128.pow(12))
+                    .unwrap()
             );
+
+            assert_eq!(actions.spender_transfer.len(), 2);
+            let reserve_data_1 = storage::get_res_data(&e, &underlying_1);
             assert_eq!(
-                frodo_positions
-                    .liabilities
-                    .get(reserve_config_1.index)
-                    .unwrap(),
-                8_0000000
+                actions.spender_transfer.get_unchecked(underlying_1.clone()),
+                8_0000000i128
+                    .fixed_mul_ceil(reserve_data_1.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
+            let reserve_data_2 = storage::get_res_data(&e, &underlying_2);
             assert_eq!(
-                frodo_positions
-                    .liabilities
-                    .get(reserve_config_2.index)
-                    .unwrap(),
-                1_5000000
+                actions.spender_transfer.get_unchecked(underlying_2.clone()),
+                1_5000000i128
+                    .fixed_mul_ceil(reserve_data_2.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
 
             let samwise_positions = storage::get_user_positions(&e, &samwise);
@@ -3341,39 +3361,43 @@ mod tests {
                 max_entry_ttl: 9999999,
             });
             let mut pool = Pool::load(&e);
-            let mut frodo_state = User::load(&e, &frodo);
+            let mut actions = Actions::new(&e);
             fill_user_liq_auction(
                 &e,
+                &mut actions,
                 &mut pool,
                 &mut auction_data,
                 &samwise,
-                &mut frodo_state,
                 true,
             );
-            let frodo_positions = frodo_state.positions;
-            assert_eq!(frodo_positions.liabilities.len(), 2);
-            assert_eq!(frodo_positions.collateral.len(), 1);
-            assert_eq!(frodo_positions.supply.len(), 0);
+            pool.store_cached_reserves(&e);
+
+            assert_eq!(actions.backstop_donate, 0);
+            assert_eq!(actions.backstop_draw, 0);
+
+            assert_eq!(actions.pool_transfer.len(), 1);
+            let reserve_data_0 = storage::get_res_data(&e, &underlying_0);
             assert_eq!(
-                frodo_positions
-                    .collateral
-                    .get(reserve_config_0.index)
-                    .unwrap(),
-                90_9100000
+                actions.pool_transfer.get_unchecked(underlying_0.clone()),
+                90_9100000i128
+                    .fixed_mul_floor(reserve_data_0.b_rate, 10i128.pow(12))
+                    .unwrap()
             );
+
+            assert_eq!(actions.spender_transfer.len(), 2);
+            let reserve_data_1 = storage::get_res_data(&e, &underlying_1);
             assert_eq!(
-                frodo_positions
-                    .liabilities
-                    .get(reserve_config_1.index)
-                    .unwrap(),
-                8_0000000
+                actions.spender_transfer.get_unchecked(underlying_1.clone()),
+                8_0000000i128
+                    .fixed_mul_ceil(reserve_data_1.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
+            let reserve_data_2 = storage::get_res_data(&e, &underlying_2);
             assert_eq!(
-                frodo_positions
-                    .liabilities
-                    .get(reserve_config_2.index)
-                    .unwrap(),
-                1_5000000
+                actions.spender_transfer.get_unchecked(underlying_2.clone()),
+                1_5000000i128
+                    .fixed_mul_ceil(reserve_data_2.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
 
             let samwise_positions = storage::get_user_positions(&e, &samwise);
@@ -3536,42 +3560,46 @@ mod tests {
                 max_entry_ttl: 9999999,
             });
             let mut pool = Pool::load(&e);
-            let mut frodo_state = User::load(&e, &frodo);
+            let mut actions = Actions::new(&e);
             // note - having no collateral remaining on the user without a 100%
             // fill is not possible. However, this test ensures it is checked to avoid
             // any edge cases.
             fill_user_liq_auction(
                 &e,
+                &mut actions,
                 &mut pool,
                 &mut auction_data,
                 &samwise,
-                &mut frodo_state,
                 false,
             );
-            let frodo_positions = frodo_state.positions;
-            assert_eq!(frodo_positions.liabilities.len(), 2);
-            assert_eq!(frodo_positions.collateral.len(), 1);
-            assert_eq!(frodo_positions.supply.len(), 0);
+            pool.store_cached_reserves(&e);
+
+            assert_eq!(actions.backstop_donate, 0);
+            assert_eq!(actions.backstop_draw, 0);
+
+            assert_eq!(actions.pool_transfer.len(), 1);
+            let reserve_data_0 = storage::get_res_data(&e, &underlying_0);
             assert_eq!(
-                frodo_positions
-                    .collateral
-                    .get(reserve_config_0.index)
-                    .unwrap(),
-                90_9100000
+                actions.pool_transfer.get_unchecked(underlying_0.clone()),
+                90_9100000i128
+                    .fixed_mul_floor(reserve_data_0.b_rate, 10i128.pow(12))
+                    .unwrap()
             );
+
+            assert_eq!(actions.spender_transfer.len(), 2);
+            let reserve_data_1 = storage::get_res_data(&e, &underlying_1);
             assert_eq!(
-                frodo_positions
-                    .liabilities
-                    .get(reserve_config_1.index)
-                    .unwrap(),
-                8_0000000
+                actions.spender_transfer.get_unchecked(underlying_1.clone()),
+                8_0000000i128
+                    .fixed_mul_ceil(reserve_data_1.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
+            let reserve_data_2 = storage::get_res_data(&e, &underlying_2);
             assert_eq!(
-                frodo_positions
-                    .liabilities
-                    .get(reserve_config_2.index)
-                    .unwrap(),
-                1_5000000
+                actions.spender_transfer.get_unchecked(underlying_2.clone()),
+                1_5000000i128
+                    .fixed_mul_ceil(reserve_data_2.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
 
             let samwise_positions = storage::get_user_positions(&e, &samwise);

@@ -176,16 +176,6 @@ fn test_backstop_and_pool_failure() {
                 address: sam.clone(),
                 amount: 100,
             },
-            Request {
-                request_type: RequestType::Repay as u32,
-                address: stable.address.clone(),
-                amount: elrond_stable_balance / 2,
-            },
-            Request {
-                request_type: RequestType::WithdrawCollateral as u32,
-                address: xlm.address.clone(),
-                amount: sam_xlm_collateral * 2,
-            },
         ],
     );
 
@@ -241,11 +231,6 @@ fn test_backstop_and_pool_failure() {
                 address: fixture.backstop.address.clone(),
                 amount: 100,
             },
-            Request {
-                request_type: RequestType::Repay as u32,
-                address: stable.address.clone(),
-                amount: elrond_stable_balance / 2,
-            },
         ],
     );
 
@@ -295,16 +280,6 @@ fn test_backstop_and_pool_failure() {
                 request_type: RequestType::FillUserLiquidationAuction as u32,
                 address: pippin.clone(),
                 amount: 100,
-            },
-            Request {
-                request_type: RequestType::Repay as u32,
-                address: stable.address.clone(),
-                amount: elrond_stable_balance / 2,
-            },
-            Request {
-                request_type: RequestType::WithdrawCollateral as u32,
-                address: weth.address.clone(),
-                amount: pippin_weth_collateral * 2,
             },
         ],
     );

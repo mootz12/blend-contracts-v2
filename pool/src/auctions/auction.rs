@@ -1357,7 +1357,16 @@ mod tests {
             e.cost_estimate().budget().reset_unlimited();
             let mut pool = Pool::load(&e);
             let mut frodo_state = User::load(&e, &frodo);
-            fill(&e, &mut pool, 0, &samwise, &mut frodo_state, 100);
+            let mut actions = Actions::new(&e);
+            fill(
+                &e,
+                &mut actions,
+                &mut pool,
+                0,
+                &samwise,
+                &mut frodo_state,
+                100,
+            );
             let has_auction = storage::has_auction(&e, &0, &samwise);
             assert_eq!(has_auction, false);
         });
@@ -1466,7 +1475,16 @@ mod tests {
             e.cost_estimate().budget().reset_unlimited();
             let mut pool = Pool::load(&e);
             let mut frodo_state = User::load(&e, &frodo);
-            fill(&e, &mut pool, 0, &samwise, &mut frodo_state, 25);
+            let mut actions = Actions::new(&e);
+            fill(
+                &e,
+                &mut actions,
+                &mut pool,
+                0,
+                &samwise,
+                &mut frodo_state,
+                25,
+            );
 
             let expected_new_auction_data = AuctionData {
                 bid: map![&e, (underlying_2.clone(), 9281250)],
@@ -1588,7 +1606,16 @@ mod tests {
             });
             let mut pool = Pool::load(&e);
             let mut frodo_state = User::load(&e, &frodo);
-            fill(&e, &mut pool, 0, &samwise, &mut frodo_state, 25);
+            let mut actions = Actions::new(&e);
+            fill(
+                &e,
+                &mut actions,
+                &mut pool,
+                0,
+                &samwise,
+                &mut frodo_state,
+                25,
+            );
 
             let expected_new_auction_data = AuctionData {
                 bid: map![&e, (underlying_2.clone(), 75_000_0000)],
@@ -1618,7 +1645,16 @@ mod tests {
             });
             let mut pool = Pool::load(&e);
             let mut frodo_state = User::load(&e, &frodo);
-            fill(&e, &mut pool, 0, &samwise, &mut frodo_state, 67);
+            let mut actions = Actions::new(&e);
+            fill(
+                &e,
+                &mut actions,
+                &mut pool,
+                0,
+                &samwise,
+                &mut frodo_state,
+                67,
+            );
 
             let expected_new_auction_data = AuctionData {
                 bid: map![&e, (underlying_2.clone(), 24_7500000)],
@@ -1647,7 +1683,16 @@ mod tests {
             });
             let mut pool = Pool::load(&e);
             let mut frodo_state = User::load(&e, &frodo);
-            fill(&e, &mut pool, 0, &samwise, &mut frodo_state, 100);
+            let mut actions = Actions::new(&e);
+            fill(
+                &e,
+                &mut actions,
+                &mut pool,
+                0,
+                &samwise,
+                &mut frodo_state,
+                100,
+            );
             let new_auction = storage::has_auction(&e, &0, &samwise);
             assert_eq!(new_auction, false);
             let samwise_positions = storage::get_user_positions(&e, &samwise);
@@ -1778,7 +1823,16 @@ mod tests {
             e.cost_estimate().budget().reset_unlimited();
             let mut pool = Pool::load(&e);
             let mut frodo_state = User::load(&e, &frodo);
-            fill(&e, &mut pool, 0, &samwise, &mut frodo_state, 101);
+            let mut actions = Actions::new(&e);
+            fill(
+                &e,
+                &mut actions,
+                &mut pool,
+                0,
+                &samwise,
+                &mut frodo_state,
+                101,
+            );
 
             let expected_new_auction_data = AuctionData {
                 bid: map![&e, (underlying_2.clone(), 9281250)],
@@ -1901,7 +1955,16 @@ mod tests {
             e.cost_estimate().budget().reset_unlimited();
             let mut pool = Pool::load(&e);
             let mut frodo_state = User::load(&e, &frodo);
-            fill(&e, &mut pool, 0, &samwise, &mut frodo_state, 0);
+            let mut actions = Actions::new(&e);
+            fill(
+                &e,
+                &mut actions,
+                &mut pool,
+                0,
+                &samwise,
+                &mut frodo_state,
+                0,
+            );
 
             let expected_new_auction_data = AuctionData {
                 bid: map![&e, (underlying_2.clone(), 9281250)],
@@ -2022,7 +2085,16 @@ mod tests {
             e.cost_estimate().budget().reset_unlimited();
             let mut pool = Pool::load(&e);
             let mut samwise_state = User::load(&e, &samwise);
-            fill(&e, &mut pool, 0, &samwise, &mut samwise_state, 100);
+            let mut actions = Actions::new(&e);
+            fill(
+                &e,
+                &mut actions,
+                &mut pool,
+                0,
+                &samwise,
+                &mut samwise_state,
+                100,
+            );
         });
     }
 

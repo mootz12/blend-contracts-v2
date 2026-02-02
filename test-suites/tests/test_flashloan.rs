@@ -13,6 +13,7 @@ use test_suites::{
 };
 
 #[test]
+#[ignore = "flashloans disabled"]
 fn test_flashloan() {
     let fixture = create_fixture_with_data(false);
     let pool_fixture = &fixture.pools[0];
@@ -70,7 +71,7 @@ fn test_flashloan() {
 
     let result = pool_fixture
         .pool
-        .flash_loan(&samwise, &flash_loan, &requests);
+        .submit(&samwise, &samwise, &samwise, &requests);
 
     // valdiate auth
     assert_eq!(
@@ -213,6 +214,7 @@ fn test_flashloan() {
 }
 
 #[test]
+#[ignore = "flashloans disabled"]
 fn test_flashloan_reentrancy_disabled() {
     let fixture = create_fixture_with_data(true);
     let pool_fixture = &fixture.pools[0];
@@ -296,11 +298,11 @@ fn test_flashloan_reentrancy_disabled() {
         ],
     );
 
-    let flash_loan = FlashLoan {
-        contract: receiver_address.clone(),
-        asset: xlm_address.clone(),
-        amount: 100 * SCALAR_7,
-    };
+    // let flash_loan = FlashLoan {
+    //     contract: receiver_address.clone(),
+    //     asset: xlm_address.clone(),
+    //     amount: 100 * SCALAR_7,
+    // };
     let requests: Vec<Request> = vec![
         &fixture.env,
         Request {
@@ -313,7 +315,7 @@ fn test_flashloan_reentrancy_disabled() {
     // validate re-entrancy attack is protected against by the env
     let result = pool_fixture
         .pool
-        .try_flash_loan(&samwise, &flash_loan, &requests);
+        .try_submit(&samwise, &samwise, &samwise, &requests);
     assert_eq!(
         result.err(),
         Some(Ok(soroban_sdk::Error::from_type_and_code(

@@ -922,6 +922,7 @@ mod tests {
                 &mut pool,
                 &backstop_address,
                 &mut backstop_user,
+                0,
             );
             assert_eq!(result, false);
 
@@ -1012,6 +1013,7 @@ mod tests {
                 &mut pool,
                 &backstop_address,
                 &mut backstop_user,
+                0,
             );
             assert_eq!(result, false);
 
@@ -1102,6 +1104,7 @@ mod tests {
                 &mut pool,
                 &backstop_address,
                 &mut backstop_user,
+                0,
             );
             assert_eq!(result, true);
 

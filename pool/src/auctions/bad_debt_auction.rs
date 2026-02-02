@@ -148,6 +148,7 @@ mod tests {
 
     use super::*;
     use sep_40_oracle::testutils::Asset;
+    use soroban_fixed_point_math::FixedPoint;
     use soroban_sdk::{
         testutils::{Address as _, Ledger, LedgerInfo},
         vec, Symbol,
@@ -1839,7 +1840,11 @@ mod tests {
             max_positions: 4,
         };
         let mut auction_data = AuctionData {
-            bid: map![&e, (underlying_0, 10_0000000), (underlying_1, 2_5000000)],
+            bid: map![
+                &e,
+                (underlying_0.clone(), 10_0000000),
+                (underlying_1.clone(), 2_5000000)
+            ],
             lot: map![&e, (lp_token.clone(), 47_6000000)],
             block: 51,
         };
@@ -1863,31 +1868,51 @@ mod tests {
             storage::set_pool_config(&e, &pool_config);
             storage::set_user_positions(&e, &backstop_address, &positions);
 
+            let pre_fill_d_supply_0 = reserve_data_0.d_supply;
+            let pre_fill_d_supply_1 = reserve_data_1.d_supply;
+            let pre_fill_b_rate_0 = reserve_data_0.b_rate;
+            let pre_fill_b_rate_1 = reserve_data_1.b_rate;
+
             let mut pool = Pool::load(&e);
-            let mut samwise_state = User::load(&e, &samwise);
-            fill_bad_debt_auction(&e, &mut pool, &mut auction_data, &mut samwise_state, true);
-            assert_eq!(
-                lp_token_client.balance(&backstop_address),
-                50_000_0000000 - 47_6000000
+            let mut actions = Actions::new(&e);
+            fill_bad_debt_auction(
+                &e,
+                &mut actions,
+                &mut pool,
+                &mut auction_data,
+                &samwise,
+                true,
             );
-            assert_eq!(lp_token_client.balance(&samwise), 47_6000000);
-            let samwise_positions = samwise_state.positions;
+
+            assert_eq!(actions.pool_transfer.len(), 0);
+            assert_eq!(actions.backstop_donate, 0);
+
+            assert_eq!(actions.backstop_draw, 47_6000000);
+            assert_eq!(actions.spender_transfer.len(), 2);
             assert_eq!(
-                samwise_positions
-                    .liabilities
-                    .get(reserve_config_0.index)
-                    .unwrap(),
-                10_0000000
+                actions.spender_transfer.get_unchecked(underlying_0.clone()),
+                10_0000000i128
+                    .fixed_mul_floor(reserve_data_0.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
             assert_eq!(
-                samwise_positions
-                    .liabilities
-                    .get(reserve_config_1.index)
-                    .unwrap(),
-                2_5000000
+                actions.spender_transfer.get_unchecked(underlying_1.clone()),
+                2_5000000i128
+                    .fixed_mul_floor(reserve_data_1.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
+
             let backstop_positions = storage::get_user_positions(&e, &backstop_address);
             assert_eq!(backstop_positions.liabilities.len(), 0);
+
+            // verify reserve data is updated and set to be stored
+            pool.store_cached_reserves(&e);
+            let reserve_data_0 = storage::get_res_data(&e, &underlying_0);
+            assert_eq!(reserve_data_0.d_supply, pre_fill_d_supply_0 - 10_0000000);
+            assert!(reserve_data_0.b_rate == pre_fill_b_rate_0);
+            let reserve_data_1 = storage::get_res_data(&e, &underlying_1);
+            assert_eq!(reserve_data_1.d_supply, pre_fill_d_supply_1 - 2_5000000);
+            assert!(reserve_data_1.b_rate == pre_fill_b_rate_1);
         });
     }
 
@@ -2009,31 +2034,34 @@ mod tests {
             let pre_fill_b_rate_0 = reserve_data_0.b_rate;
             let pre_fill_b_rate_1 = reserve_data_1.b_rate;
             let mut pool = Pool::load(&e);
-            let mut samwise_state = User::load(&e, &samwise);
-            fill_bad_debt_auction(&e, &mut pool, &mut auction_data, &mut samwise_state, true);
+            let mut actions = Actions::new(&e);
+            fill_bad_debt_auction(
+                &e,
+                &mut actions,
+                &mut pool,
+                &mut auction_data,
+                &samwise,
+                true,
+            );
+
+            assert_eq!(actions.pool_transfer.len(), 0);
+            assert_eq!(actions.backstop_donate, 0);
+
+            assert_eq!(actions.backstop_draw, 47_6000000);
+            assert_eq!(actions.spender_transfer.len(), 2);
             assert_eq!(
-                lp_token_client.balance(&backstop_address),
-                1_000_0000000 - 47_6000000
+                actions.spender_transfer.get_unchecked(underlying_0.clone()),
+                (10_0000000 - 2_5000000)
+                    .fixed_mul_floor(reserve_data_0.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
             assert_eq!(
-                lp_token_client.balance(&samwise),
-                50_000_0000000 - 1_000_0000000 + 47_6000000
+                actions.spender_transfer.get_unchecked(underlying_1.clone()),
+                (2_5000000 - 0_6250000)
+                    .fixed_mul_floor(reserve_data_1.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
-            let samwise_positions = samwise_state.positions;
-            assert_eq!(
-                samwise_positions
-                    .liabilities
-                    .get(reserve_config_0.index)
-                    .unwrap(),
-                10_0000000 - 2_5000000
-            );
-            assert_eq!(
-                samwise_positions
-                    .liabilities
-                    .get(reserve_config_1.index)
-                    .unwrap(),
-                2_5000000 - 0_6250000
-            );
+
             let backstop_positions = storage::get_user_positions(&e, &backstop_address);
             assert_eq!(backstop_positions.liabilities.len(), 0);
             assert_eq!(backstop_positions.collateral.len(), 0);
@@ -2042,10 +2070,10 @@ mod tests {
             // verify reserve data is updated and set to be stored
             pool.store_cached_reserves(&e);
             let reserve_data_0 = storage::get_res_data(&e, &underlying_0);
-            assert_eq!(reserve_data_0.d_supply, pre_fill_d_supply_0 - 2_5000000);
+            assert_eq!(reserve_data_0.d_supply, pre_fill_d_supply_0 - 10_0000000);
             assert!(reserve_data_0.b_rate < pre_fill_b_rate_0);
             let reserve_data_1 = storage::get_res_data(&e, &underlying_1);
-            assert_eq!(reserve_data_1.d_supply, pre_fill_d_supply_1 - 0_6250000);
+            assert_eq!(reserve_data_1.d_supply, pre_fill_d_supply_1 - 2_5000000);
             assert!(reserve_data_1.b_rate < pre_fill_b_rate_1);
         });
     }
@@ -2163,32 +2191,40 @@ mod tests {
             storage::set_pool_config(&e, &pool_config);
             storage::set_user_positions(&e, &backstop_address, &positions);
 
+            let pre_fill_d_supply_0 = reserve_data_0.d_supply;
+            let pre_fill_d_supply_1 = reserve_data_1.d_supply;
+            let pre_fill_b_rate_0 = reserve_data_0.b_rate;
+            let pre_fill_b_rate_1 = reserve_data_1.b_rate;
+
             let mut pool = Pool::load(&e);
-            let mut samwise_state = User::load(&e, &samwise);
-            fill_bad_debt_auction(&e, &mut pool, &mut auction_data, &mut samwise_state, false);
+            let mut actions = Actions::new(&e);
+            fill_bad_debt_auction(
+                &e,
+                &mut actions,
+                &mut pool,
+                &mut auction_data,
+                &samwise,
+                false,
+            );
+
+            assert_eq!(actions.pool_transfer.len(), 0);
+            assert_eq!(actions.backstop_donate, 0);
+
+            assert_eq!(actions.backstop_draw, 47_6000000);
+            assert_eq!(actions.spender_transfer.len(), 2);
             assert_eq!(
-                lp_token_client.balance(&backstop_address),
-                1_000_0000000 - 47_6000000
+                actions.spender_transfer.get_unchecked(underlying_0.clone()),
+                (10_0000000 - 2_5000000)
+                    .fixed_mul_ceil(reserve_data_0.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
             assert_eq!(
-                lp_token_client.balance(&samwise),
-                50_000_0000000 - 1_000_0000000 + 47_6000000
+                actions.spender_transfer.get_unchecked(underlying_1.clone()),
+                (2_5000000 - 0_6250000)
+                    .fixed_mul_ceil(reserve_data_1.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
-            let samwise_positions = samwise_state.positions;
-            assert_eq!(
-                samwise_positions
-                    .liabilities
-                    .get(reserve_config_0.index)
-                    .unwrap(),
-                10_0000000 - 2_5000000
-            );
-            assert_eq!(
-                samwise_positions
-                    .liabilities
-                    .get(reserve_config_1.index)
-                    .unwrap(),
-                2_5000000 - 0_6250000
-            );
+
             let backstop_positions = storage::get_user_positions(&e, &backstop_address);
             assert_eq!(backstop_positions.liabilities.len(), 2);
             assert_eq!(backstop_positions.collateral.len(), 0);
@@ -2207,6 +2243,20 @@ mod tests {
                     .unwrap(),
                 2_5000000 - (2_5000000 - 0_6250000)
             );
+
+            pool.store_cached_reserves(&e);
+            let reserve_data_0 = storage::get_res_data(&e, &underlying_0);
+            assert_eq!(
+                reserve_data_0.d_supply,
+                pre_fill_d_supply_0 - (10_0000000 - 2_5000000)
+            );
+            assert!(reserve_data_0.b_rate == pre_fill_b_rate_0);
+            let reserve_data_1 = storage::get_res_data(&e, &underlying_1);
+            assert_eq!(
+                reserve_data_1.d_supply,
+                pre_fill_d_supply_1 - (2_5000000 - 0_6250000)
+            );
+            assert!(reserve_data_1.b_rate == pre_fill_b_rate_1);
         });
     }
 
@@ -2328,31 +2378,33 @@ mod tests {
             let pre_fill_b_rate_0 = reserve_data_0.b_rate;
             let pre_fill_b_rate_1 = reserve_data_1.b_rate;
             let mut pool = Pool::load(&e);
-            let mut samwise_state = User::load(&e, &samwise);
-            fill_bad_debt_auction(&e, &mut pool, &mut auction_data, &mut samwise_state, true);
+            let mut actions = Actions::new(&e);
+            fill_bad_debt_auction(
+                &e,
+                &mut actions,
+                &mut pool,
+                &mut auction_data,
+                &samwise,
+                true,
+            );
+            assert_eq!(actions.pool_transfer.len(), 0);
+            assert_eq!(actions.backstop_donate, 0);
+
+            assert_eq!(actions.backstop_draw, 47_6000000);
+            assert_eq!(actions.spender_transfer.len(), 2);
             assert_eq!(
-                lp_token_client.balance(&backstop_address),
-                2_500_0000000 - 47_6000000
+                actions.spender_transfer.get_unchecked(underlying_0.clone()),
+                (10_0000000 - 2_5000000)
+                    .fixed_mul_ceil(reserve_data_0.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
             assert_eq!(
-                lp_token_client.balance(&samwise),
-                50_000_0000000 - 2_500_0000000 + 47_6000000
+                actions.spender_transfer.get_unchecked(underlying_1.clone()),
+                (2_5000000 - 0_6250000)
+                    .fixed_mul_ceil(reserve_data_1.d_rate, 10i128.pow(12))
+                    .unwrap()
             );
-            let samwise_positions = samwise_state.positions;
-            assert_eq!(
-                samwise_positions
-                    .liabilities
-                    .get(reserve_config_0.index)
-                    .unwrap(),
-                10_0000000 - 2_5000000
-            );
-            assert_eq!(
-                samwise_positions
-                    .liabilities
-                    .get(reserve_config_1.index)
-                    .unwrap(),
-                2_5000000 - 6250000
-            );
+
             let backstop_positions = storage::get_user_positions(&e, &backstop_address);
             assert_eq!(
                 backstop_positions
@@ -2372,10 +2424,16 @@ mod tests {
             // verify reserve data is updated and set to be stored
             pool.store_cached_reserves(&e);
             let reserve_data_0 = storage::get_res_data(&e, &underlying_0);
-            assert_eq!(reserve_data_0.d_supply, pre_fill_d_supply_0);
+            assert_eq!(
+                reserve_data_0.d_supply,
+                pre_fill_d_supply_0 - (10_0000000 - 2_5000000)
+            );
             assert_eq!(reserve_data_0.b_rate, pre_fill_b_rate_0);
             let reserve_data_1 = storage::get_res_data(&e, &underlying_1);
-            assert_eq!(reserve_data_1.d_supply, pre_fill_d_supply_1);
+            assert_eq!(
+                reserve_data_1.d_supply,
+                pre_fill_d_supply_1 - (2_5000000 - 0_6250000)
+            );
             assert_eq!(reserve_data_1.b_rate, pre_fill_b_rate_1);
         });
     }
@@ -2491,30 +2549,20 @@ mod tests {
             storage::set_user_positions(&e, &backstop_address, &positions);
 
             let mut pool = Pool::load(&e);
-            let mut samwise_state = User::load(&e, &samwise);
-            fill_bad_debt_auction(&e, &mut pool, &mut auction_data, &mut samwise_state, true);
-            assert_eq!(
-                lp_token_client.balance(&backstop_address),
-                50_000_0000000 - 47_6000000
+            let mut actions = Actions::new(&e);
+            fill_bad_debt_auction(
+                &e,
+                &mut actions,
+                &mut pool,
+                &mut auction_data,
+                &samwise,
+                true,
             );
-            assert_eq!(lp_token_client.balance(&samwise), 47_6000000);
-            let samwise_positions = samwise_state.positions;
-            assert_eq!(samwise_positions.liabilities.len(), 0);
-            let backstop_positions = storage::get_user_positions(&e, &backstop_address);
-            assert_eq!(
-                backstop_positions
-                    .liabilities
-                    .get(reserve_config_0.index)
-                    .unwrap(),
-                10_0000000
-            );
-            assert_eq!(
-                backstop_positions
-                    .liabilities
-                    .get(reserve_config_1.index)
-                    .unwrap(),
-                2_5000000
-            );
+            assert_eq!(actions.pool_transfer.len(), 0);
+            assert_eq!(actions.backstop_donate, 0);
+
+            assert_eq!(actions.backstop_draw, 47_6000000);
+            assert_eq!(actions.spender_transfer.len(), 0);
         });
     }
 
@@ -2630,8 +2678,15 @@ mod tests {
             storage::set_user_positions(&e, &backstop_address, &positions);
 
             let mut pool = Pool::load(&e);
-            let mut backstop_state = User::load(&e, &backstop_address);
-            fill_bad_debt_auction(&e, &mut pool, &mut auction_data, &mut backstop_state, true);
+            let mut actions = Actions::new(&e);
+            fill_bad_debt_auction(
+                &e,
+                &mut actions,
+                &mut pool,
+                &mut auction_data,
+                &backstop_address,
+                true,
+            );
         });
     }
 }

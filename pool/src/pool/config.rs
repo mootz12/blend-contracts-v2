@@ -529,6 +529,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -580,6 +582,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -634,6 +638,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -677,6 +683,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -714,6 +722,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let metadata = ReserveConfig {
@@ -729,6 +739,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -784,6 +796,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let metadata = ReserveConfig {
@@ -799,6 +813,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -838,6 +854,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let metadata = ReserveConfig {
@@ -853,6 +871,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let pool_config = PoolConfig {
@@ -891,6 +911,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         e.as_contract(&pool, || {
@@ -931,6 +953,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         e.as_contract(&pool, || {
@@ -980,6 +1004,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         e.as_contract(&pool, || {
@@ -1190,6 +1216,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 105,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
 
@@ -1238,6 +1266,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         e.as_contract(&pool, || {
@@ -1278,6 +1308,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1303,6 +1335,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1326,6 +1360,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1349,6 +1385,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1372,6 +1410,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1395,6 +1435,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1418,6 +1460,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1441,6 +1485,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1464,6 +1510,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 100,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);
@@ -1487,6 +1535,8 @@ mod tests {
             r_three: 1_5000000,
             reactivity: 0_0001001,
             supply_cap: 1000000000000000000,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         require_valid_reserve_metadata(&e, &metadata);

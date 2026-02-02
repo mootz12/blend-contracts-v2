@@ -818,7 +818,7 @@ mod tests {
         let mut reserve = testutils::default_reserve(&e);
         reserve.config.enabled = false;
 
-        reserve.require_action_allowed(&e, RequestType::Supply as u32);
+        reserve.require_action_allowed(&e, RequestType::Supply as u32, true);
     }
 
     #[test]
@@ -829,7 +829,7 @@ mod tests {
         let mut reserve = testutils::default_reserve(&e);
         reserve.config.enabled = false;
 
-        reserve.require_action_allowed(&e, RequestType::SupplyCollateral as u32);
+        reserve.require_action_allowed(&e, RequestType::SupplyCollateral as u32, true);
     }
 
     #[test]
@@ -840,7 +840,7 @@ mod tests {
         let mut reserve = testutils::default_reserve(&e);
         reserve.config.enabled = false;
 
-        reserve.require_action_allowed(&e, RequestType::Borrow as u32);
+        reserve.require_action_allowed(&e, RequestType::Borrow as u32, true);
     }
 
     #[test]
@@ -850,9 +850,9 @@ mod tests {
         let mut reserve = testutils::default_reserve(&e);
         reserve.config.enabled = false;
 
-        reserve.require_action_allowed(&e, RequestType::Withdraw as u32);
-        reserve.require_action_allowed(&e, RequestType::WithdrawCollateral as u32);
-        reserve.require_action_allowed(&e, RequestType::Repay as u32);
+        reserve.require_action_allowed(&e, RequestType::Withdraw as u32, true);
+        reserve.require_action_allowed(&e, RequestType::WithdrawCollateral as u32, true);
+        reserve.require_action_allowed(&e, RequestType::Repay as u32, true);
     }
 
     #[test]

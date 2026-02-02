@@ -121,6 +121,8 @@ mod tests {
             reactivity: 0_0000020,
             supply_cap: 1000000000000000000,
             index: 0,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let ir_mod: i128 = 1_0000000;
@@ -159,6 +161,8 @@ mod tests {
             reactivity: 0_0000020,
             supply_cap: 1000000000000000000,
             index: 0,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let ir_mod: i128 = 1_0000000;
@@ -197,6 +201,8 @@ mod tests {
             reactivity: 0_0000020,
             supply_cap: 1000000000000000000,
             index: 0,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let ir_mod: i128 = 1_0000000;
@@ -235,6 +241,8 @@ mod tests {
             reactivity: 0_0000020,
             supply_cap: 1000000000000000000,
             index: 0,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let ir_mod: i128 = 9_9970000;
@@ -272,6 +280,8 @@ mod tests {
             reactivity: 0_0000020,
             supply_cap: 1000000000000000000,
             index: 0,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let ir_mod: i128 = 0_1500000;
@@ -309,6 +319,8 @@ mod tests {
             reactivity: 0,
             supply_cap: 1000000000000000000,
             index: 0,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let ir_mod: i128 = 1_0000000;
@@ -347,6 +359,8 @@ mod tests {
             reactivity: 0_0000020,
             supply_cap: 1000000000000000000,
             index: 0,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let ir_mod: i128 = 0_1000000;
@@ -385,6 +399,8 @@ mod tests {
             reactivity: 0_0000020,
             supply_cap: 1000000000000000000,
             index: 0,
+            rwa_admin: None,
+            rwa: false,
             enabled: true,
         };
         let ir_mod: i128 = 1_0000000;

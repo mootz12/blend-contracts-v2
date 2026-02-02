@@ -520,7 +520,8 @@ mod tests {
             ];
 
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, false);
 
@@ -600,7 +601,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, false);
             assert_eq!(actions.check_max_util.len(), 0);
@@ -675,7 +677,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, false);
             assert_eq!(actions.check_max_util.len(), 0);
@@ -752,7 +755,7 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            build_actions_from_request(&e, &mut pool, &mut user, requests);
+            build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
         });
     }
 
@@ -802,7 +805,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, false);
 
@@ -881,7 +885,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, true);
             assert_eq!(actions.check_max_util.len(), 0);
@@ -956,7 +961,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, true);
             assert_eq!(actions.check_max_util.len(), 0);
@@ -1033,7 +1039,7 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            build_actions_from_request(&e, &mut pool, &mut user, requests);
+            build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
         });
     }
 
@@ -1082,7 +1088,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, true);
             assert_eq!(actions.check_max_util, vec![&e, underlying.clone()]);
@@ -1162,7 +1169,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, true);
             assert_eq!(
@@ -1247,7 +1255,7 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            build_actions_from_request(&e, &mut pool, &mut user, requests);
+            build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
         });
     }
 
@@ -1303,7 +1311,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, false);
 
@@ -1381,7 +1390,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, false);
 
@@ -1483,7 +1493,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, true);
 
@@ -1624,7 +1635,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &frodo);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, true);
             let exp_new_auction = AuctionData {
@@ -1641,8 +1653,26 @@ mod tests {
             assert_eq!(exp_new_auction.bid, new_auction.bid);
             assert_eq!(exp_new_auction.lot, new_auction.lot);
             assert_eq!(exp_new_auction.block, new_auction.block);
-            assert_eq!(actions.pool_transfer.len(), 0);
-            assert_eq!(actions.spender_transfer.len(), 0);
+            assert_eq!(actions.backstop_donate, 0);
+            assert_eq!(actions.backstop_draw, 0);
+
+            assert_eq!(actions.pool_transfer.len(), 2);
+            let reserve_0 = pool.load_reserve(&e, &underlying_0, false);
+            assert_eq!(
+                actions.pool_transfer.get_unchecked(underlying_0.clone()),
+                reserve_0.to_asset_from_b_token(&e, 30_5595329 - 15_2797665)
+            );
+            let reserve_1 = pool.load_reserve(&e, &underlying_1, false);
+            assert_eq!(
+                actions.pool_transfer.get_unchecked(underlying_1.clone()),
+                reserve_1.to_asset_from_b_token(&e, 1_5395739 - 7697870)
+            );
+            assert_eq!(actions.spender_transfer.len(), 1);
+            let reserve_2 = pool.load_reserve(&e, &underlying_2, false);
+            assert_eq!(
+                actions.spender_transfer.get_unchecked(underlying_2.clone()),
+                reserve_2.to_asset_from_d_token(&e, 1_2375000 - 6187500)
+            );
         });
     }
 
@@ -1718,7 +1748,11 @@ mod tests {
             max_positions: 2,
         };
         let auction_data = AuctionData {
-            bid: map![&e, (underlying_0, 10_0000000), (underlying_1, 2_5000000)],
+            bid: map![
+                &e,
+                (underlying_0.clone(), 10_0000000),
+                (underlying_1.clone(), 2_5000000)
+            ],
             lot: map![&e, (backstop_token_id, 95_2000000)],
             block: 51,
         };
@@ -1755,7 +1789,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &frodo);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, true);
             assert_eq!(
@@ -1763,7 +1798,20 @@ mod tests {
                 false
             );
             assert_eq!(actions.pool_transfer.len(), 0);
-            assert_eq!(actions.spender_transfer.len(), 0);
+            assert_eq!(actions.backstop_donate, 0);
+            assert_eq!(actions.backstop_draw, 95_2000000);
+            assert_eq!(actions.pool_transfer.len(), 0);
+            assert_eq!(actions.spender_transfer.len(), 2);
+            let reserve_0 = pool.load_reserve(&e, &underlying_0, false);
+            assert_eq!(
+                actions.spender_transfer.get_unchecked(underlying_0.clone()),
+                reserve_0.to_asset_from_d_token(&e, 10_0000000)
+            );
+            let reserve_1 = pool.load_reserve(&e, &underlying_1, false);
+            assert_eq!(
+                actions.spender_transfer.get_unchecked(underlying_1.clone()),
+                reserve_1.to_asset_from_d_token(&e, 2_5000000)
+            );
         });
     }
 
@@ -1893,17 +1941,10 @@ mod tests {
                     amount: 100,
                 },
             ];
-            let pre_fill_backstop_token_balance = backstop_token_client.balance(&backstop_address);
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
-            assert_eq!(backstop_token_client.balance(&samwise), 25_0000000);
-            assert_eq!(
-                backstop_token_client.balance(&backstop_address),
-                pre_fill_backstop_token_balance + 75_0000000
-            );
-            assert_eq!(underlying_0_client.balance(&samwise), 100_0000000);
-            assert_eq!(underlying_1_client.balance(&samwise), 25_0000000);
             assert_eq!(actions.check_health, false);
             assert_eq!(
                 storage::has_auction(
@@ -1913,8 +1954,20 @@ mod tests {
                 ),
                 false
             );
-            assert_eq!(actions.pool_transfer.len(), 0);
+            assert_eq!(actions.backstop_draw, 0);
             assert_eq!(actions.spender_transfer.len(), 0);
+
+            assert_eq!(actions.backstop_donate, 75_0000000);
+
+            assert_eq!(actions.pool_transfer.len(), 2);
+            assert_eq!(
+                actions.pool_transfer.get_unchecked(underlying_0.clone()),
+                100_0000000
+            );
+            assert_eq!(
+                actions.pool_transfer.get_unchecked(underlying_1.clone()),
+                25_0000000
+            );
         });
     }
 
@@ -1981,7 +2034,8 @@ mod tests {
                 },
             ];
             let mut user = User::load(&e, &samwise);
-            let actions = build_actions_from_request(&e, &mut pool, &mut user, requests);
+            let actions =
+                build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
 
             assert_eq!(actions.check_health, true);
             assert_eq!(
@@ -2032,7 +2086,7 @@ mod tests {
             let mut pool = Pool::load(&e);
 
             let mut user = User::load(&e, &samwise);
-            build_actions_from_request(&e, &mut pool, &mut user, requests);
+            build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
         });
     }
 
@@ -2073,7 +2127,7 @@ mod tests {
             let mut pool = Pool::load(&e);
             let mut user = User::load(&e, &samwise);
 
-            build_actions_from_request(&e, &mut pool, &mut user, requests);
+            build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
         });
     }
 
@@ -2114,7 +2168,7 @@ mod tests {
             let mut pool = Pool::load(&e);
             let mut user = User::load(&e, &samwise);
 
-            build_actions_from_request(&e, &mut pool, &mut user, requests);
+            build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
         });
     }
 
@@ -2155,7 +2209,7 @@ mod tests {
             let mut pool = Pool::load(&e);
             let mut user = User::load(&e, &samwise);
 
-            build_actions_from_request(&e, &mut pool, &mut user, requests);
+            build_actions_from_request(&e, &mut pool, &mut user, &samwise, &samwise, requests);
         });
     }
 }
