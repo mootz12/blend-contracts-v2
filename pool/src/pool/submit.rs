@@ -70,9 +70,9 @@ pub fn execute_submit(
 /// Returns a tuple of (underlying, rwa_admin)
 pub fn execute_authorized_transfer(
     e: &Env,
+    asset: &Address,
     from: &Address,
     to: &Address,
-    asset: &Address,
     btoken_amount: i128,
     collateral: bool,
 ) -> (i128, Address) {
