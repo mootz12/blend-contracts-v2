@@ -9,7 +9,7 @@ use test_suites::{
 
 #[test]
 fn test_pool_inflation_attack() {
-    let mut fixture = TestFixture::create(false);
+    let mut fixture = TestFixture::create(true);
 
     let whale = Address::generate(&fixture.env);
     let sauron = Address::generate(&fixture.env);

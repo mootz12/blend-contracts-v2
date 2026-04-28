@@ -10,7 +10,7 @@ use test_suites::{
 
 #[test]
 fn test_backstop_and_pool_failure() {
-    let fixture = create_fixture_with_data(false);
+    let fixture = create_fixture_with_data(true);
     let pool_fixture = &fixture.pools[0];
     let stable_pool_index = pool_fixture.reserves[&TokenIndex::STABLE];
     let xlm_pool_index = pool_fixture.reserves[&TokenIndex::XLM];

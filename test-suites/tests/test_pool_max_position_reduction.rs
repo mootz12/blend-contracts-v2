@@ -9,7 +9,7 @@ use test_suites::{
 
 #[test]
 fn test_pool_max_positions_reduction() {
-    let fixture = create_fixture_with_data(false);
+    let fixture = create_fixture_with_data(true);
     let pool_fixture = &fixture.pools[0];
     let weth_pool_index = pool_fixture.reserves[&TokenIndex::WETH];
     let xlm = &fixture.tokens[TokenIndex::XLM];

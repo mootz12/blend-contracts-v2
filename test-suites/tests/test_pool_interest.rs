@@ -14,7 +14,7 @@ use test_suites::{
 /// Test interest is accrued correctly over time
 #[test]
 fn test_pool_interest() {
-    let mut fixture = TestFixture::create(false);
+    let mut fixture = TestFixture::create(true);
 
     let whale = Address::generate(&fixture.env);
     let samwise = Address::generate(&fixture.env);

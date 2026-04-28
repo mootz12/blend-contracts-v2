@@ -12,7 +12,7 @@ use test_suites::{
 /// Smoke test for managing positions, tracking emissions, and accruing interest
 #[test]
 fn test_wasm_happy_path() {
-    let fixture = create_fixture_with_data(false);
+    let fixture = create_fixture_with_data(true);
     let frodo = fixture.users.get(0).unwrap();
     let pool_fixture = &fixture.pools[0];
     let stable_pool_index = pool_fixture.reserves[&TokenIndex::STABLE];

@@ -12,7 +12,7 @@ use test_suites::{
 /// Test backstop RZ changes correctly handle emissions tracking
 #[test]
 fn test_backstop_rz_changes_handle_emissions() {
-    let fixture = create_fixture_with_data(false);
+    let fixture = create_fixture_with_data(true);
     let bstop_token = &fixture.lp;
     let sam = Address::generate(&fixture.env);
     let frodo = &fixture.users[0];

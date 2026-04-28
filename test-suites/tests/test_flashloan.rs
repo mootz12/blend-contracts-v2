@@ -3,7 +3,7 @@ use pool::{FlashLoan, Request, RequestType};
 use soroban_fixed_point_math::FixedPoint;
 use soroban_sdk::{
     map,
-    testutils::{Address as _, AuthorizedFunction, AuthorizedInvocation, Events},
+    testutils::{budget, Address as _, AuthorizedFunction, AuthorizedInvocation, Events},
     vec, Address, IntoVal, Symbol, Val, Vec,
 };
 use test_suites::{
@@ -14,7 +14,7 @@ use test_suites::{
 
 #[test]
 fn test_flashloan() {
-    let fixture = create_fixture_with_data(false);
+    let fixture = create_fixture_with_data(true);
     let pool_fixture = &fixture.pools[0];
 
     let xlm = &fixture.tokens[TokenIndex::XLM];
@@ -68,9 +68,12 @@ fn test_flashloan() {
         },
     ];
 
+    fixture.env.cost_estimate().budget().reset_default();
     let result = pool_fixture
         .pool
         .flash_loan(&samwise, &flash_loan, &requests);
+    let budget = fixture.env.cost_estimate().budget();
+    println!("Budget used: {:?}", budget);
 
     // valdiate auth
     assert_eq!(

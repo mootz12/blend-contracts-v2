@@ -50,11 +50,12 @@ fn assert_fill_auction_event_no_data(
 
 #[test]
 fn test_liquidations() {
-    let fixture = create_fixture_with_data(false);
+    let fixture = create_fixture_with_data(true);
     let frodo = fixture.users.get(0).unwrap();
     let pool_fixture = &fixture.pools[0];
 
     // accrue interest
+    fixture.env.cost_estimate().budget().reset_unlimited();
     let requests: Vec<Request> = vec![
         &fixture.env,
         Request {
@@ -89,6 +90,15 @@ fn test_liquidations() {
         },
     ];
     pool_fixture.pool.submit(&frodo, &frodo, &frodo, &requests);
+    let interest_accrual_budget = fixture.env.cost_estimate().budget();
+    std::println!(
+        "Interest accrual CPU: {:?}",
+        interest_accrual_budget.cpu_instruction_cost()
+    );
+    std::println!(
+        "Interest accrual membytes: {:?}",
+        interest_accrual_budget.memory_bytes_cost()
+    );
 
     // Disable rate modifiers
     let mut usdc_config: ReserveConfig = fixture.read_reserve_config(0, TokenIndex::STABLE);
@@ -359,10 +369,20 @@ fn test_liquidations() {
         &lp_donate_bid_amount,
         &fixture.env.ledger().sequence(),
     );
+    fixture.env.cost_estimate().budget().reset_unlimited();
     let frodo_positions_post_fill =
         pool_fixture
             .pool
             .submit(&frodo, &frodo, &frodo, &fill_requests);
+    let spam_fill_budget = fixture.env.cost_estimate().budget();
+    std::println!(
+        "Spam fill CPU: {:?}",
+        spam_fill_budget.cpu_instruction_cost()
+    );
+    std::println!(
+        "Spam fill membytes: {:?}",
+        spam_fill_budget.memory_bytes_cost()
+    );
     assert_approx_eq_abs(
         frodo_positions_post_fill.collateral.get_unchecked(2),
         weth_lot_amount

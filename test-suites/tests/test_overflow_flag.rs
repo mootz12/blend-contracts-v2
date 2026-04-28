@@ -10,7 +10,7 @@ use test_suites::{
 
 #[test]
 fn test_pool_overflow() {
-    let fixture = create_fixture_with_data(false);
+    let fixture = create_fixture_with_data(true);
     let pool_fixture = &fixture.pools[0];
 
     // overflow can occur when a user's oracle balance is >i128::MAX

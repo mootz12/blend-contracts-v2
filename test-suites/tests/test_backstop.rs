@@ -16,7 +16,7 @@ use test_suites::{
 /// Does not test internal state management of the backstop, only external effects.
 #[test]
 fn test_backstop() {
-    let fixture = create_fixture_with_data(false);
+    let fixture = create_fixture_with_data(true);
     let frodo = fixture.users.get(0).unwrap();
 
     let pool = &fixture.pools[0].pool;
